@@ -1,0 +1,42 @@
+.
+├── app
+├── app.json
+├── assets
+│   ├── assets
+│   │   ├── boloCaramelo.png
+│   │   ├── boloCaseirinho.png
+│   │   ├── boloChocolate.png
+│   │   ├── boloEncanto.png
+│   │   ├── boloFrutado.png
+│   │   ├── boloMelAmor.png
+│   │   ├── boloTropical.png
+│   │   ├── boloVeludo.png
+│   │   ├── carrinho.png
+│   │   ├── fatiasBolo.png
+│   │   ├── logo.png
+│   │   ├── review15Anos.png
+│   │   ├── reviewAniversario.png
+│   │   ├── reviewCasamento.png
+│   │   ├── setinha.png
+│   │   └── vitrine.png
+│   └── index.tsx
+├── components
+│   ├── external-link.tsx
+│   ├── haptic-tab.tsx
+│   ├── hello-wave.tsx
+│   ├── parallax-scroll-view.tsx
+│   ├── themed-text.tsx
+│   ├── themed-view.tsx
+│   └── ui
+│       ├── collapsible.tsx
+│       ├── icon-symbol.ios.tsx
+│       └── icon-symbol.tsx
+├── eslint.config.js
+├── estrutura.txt
+├── expo-env.d.ts
+├── package.json
+├── package-lock.json
+├── README.md
+└── tsconfig.json
+
+6 directories, 34 files
