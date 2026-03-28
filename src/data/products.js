@@ -1,16 +1,10 @@
 import { IMAGES } from '../constants/Images';
 
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: any; 
-  category: string;
-  rating: number;
-}
-
-export const products: Product[] = [
+/**
+ * Lista de produtos da Velvet Slice
+ * Cada produto contém: id, name, description, price, image, category e rating.
+ */
+export const products = [
   {
     id: '1',
     name: 'Bolo de Chocolate Clássico',
@@ -38,7 +32,7 @@ export const products: Product[] = [
     category: 'Especiais',
     rating: 5.0,
   },
-    {
+  {
     id: '4',
     name: 'Bolo de Caramelo Salgado',
     description: 'Massa de baunilha com recheio e cobertura de caramelo salgado.',
@@ -74,7 +68,7 @@ export const products: Product[] = [
     category: 'Especiais',
     rating: 4.9,
   },
-{
+  {
     id: '8',
     name: 'Bolo Tropical de Frutas',
     description: 'Massa branca leve com recheio de creme e frutas frescas da estação.',

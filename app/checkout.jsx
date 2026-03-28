@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Plus, ChevronRight, CreditCard, QrCode } from 'lucide-react-native';
+
+// Importação de contextos e dados
 import { useCart } from '../src/contexts/CartContext';
+
+// Importação de componentes e estilos
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { Navbar } from '../src/components/Navbar';
@@ -14,8 +18,10 @@ import { AddCardModal } from '../src/components/AddCardModal';
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, total } = useCart();
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix'>('card');
-  const [selectedCard, setSelectedCard] = useState<'credit' | 'debit'>('credit');
+  
+  // Estados em JavaScript puro (sem tipagem estática)
+  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' ou 'pix'
+  const [selectedCard, setSelectedCard] = useState('credit'); // 'credit' ou 'debit'
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [showAddCard, setShowAddCard] = useState(false);
 
@@ -25,26 +31,31 @@ export default function CheckoutPage() {
 
   const handlePurchase = () => {
     if (paymentMethod === 'pix') {
-      router.push('/pix-payment' as never);
+      router.push('/pix-payment');
     } else {
-      router.push('/payment-success' as never);
+      router.push('/payment-success');
     }
   };
 
   return (
     <View style={styles.container}>
       <Header />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         <View style={styles.content}>
           <Text style={styles.pageTitle}>Comprar</Text>
 
-          {/* Address Section */}
+          {/* Seção de Endereço */}
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>Endereço</Text>
             <TouchableOpacity onPress={() => setShowAddAddress(true)}>
               <Plus size={20} color={Colors.primary} />
             </TouchableOpacity>
           </View>
+          
           <View style={styles.addressCard}>
             <View style={styles.addressIcon}>
               <Text style={styles.addressIconText}>📍</Text>
@@ -58,9 +69,9 @@ export default function CheckoutPage() {
             <ChevronRight size={20} color={Colors.primary} />
           </View>
 
-          {/* Items Section */}
+          {/* Seção de Itens */}
           <Text style={styles.sectionTitle}>Itens</Text>
-          {items.map((item) => (
+          {items && items.map((item) => (
             <View key={item.id} style={styles.orderItem}>
               <Image source={item.image} style={styles.orderItemImage} />
               <View style={styles.orderItemInfo}>
@@ -76,12 +87,14 @@ export default function CheckoutPage() {
                   <Text style={styles.valueText}>{item.quantity}</Text>
                 </View>
                 <Text style={styles.itemTotalLabel}>Total</Text>
-                <Text style={styles.itemTotalPrice}>R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}</Text>
+                <Text style={styles.itemTotalPrice}>
+                  R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
+                </Text>
               </View>
             </View>
           ))}
 
-          {/* Payment Method */}
+          {/* Método de Pagamento */}
           <Text style={styles.sectionTitle}>Método de pagamento</Text>
           <View style={styles.paymentMethodRow}>
             <TouchableOpacity
@@ -90,6 +103,7 @@ export default function CheckoutPage() {
             >
               <CreditCard size={24} color={paymentMethod === 'card' ? Colors.background : Colors.primary} />
             </TouchableOpacity>
+            
             <TouchableOpacity
               style={[styles.paymentOption, paymentMethod === 'pix' && styles.paymentOptionActive]}
               onPress={() => setPaymentMethod('pix')}
@@ -113,8 +127,12 @@ export default function CheckoutPage() {
               >
                 <CreditCard size={20} color={selectedCard === 'credit' ? Colors.background : Colors.primary} />
                 <View style={styles.cardInfo}>
-                  <Text style={[styles.cardTitle, selectedCard === 'credit' && styles.cardTitleSelected]}>Cartão de crédito</Text>
-                  <Text style={[styles.cardNumber, selectedCard === 'credit' && styles.cardNumberSelected]}>1236.****.****.1236</Text>
+                  <Text style={[styles.cardTitle, selectedCard === 'credit' && styles.cardTitleSelected]}>
+                    Cartão de crédito
+                  </Text>
+                  <Text style={[styles.cardNumber, selectedCard === 'credit' && styles.cardNumberSelected]}>
+                    1236.****.****.1236
+                  </Text>
                 </View>
               </TouchableOpacity>
 
@@ -124,30 +142,39 @@ export default function CheckoutPage() {
               >
                 <CreditCard size={20} color={selectedCard === 'debit' ? Colors.background : Colors.primary} />
                 <View style={styles.cardInfo}>
-                  <Text style={[styles.cardTitle, selectedCard === 'debit' && styles.cardTitleSelected]}>Cartão de débito</Text>
-                  <Text style={[styles.cardNumber, selectedCard === 'debit' && styles.cardNumberSelected]}>1236.****.****.1236</Text>
+                  <Text style={[styles.cardTitle, selectedCard === 'debit' && styles.cardTitleSelected]}>
+                    Cartão de débito
+                  </Text>
+                  <Text style={[styles.cardNumber, selectedCard === 'debit' && styles.cardNumberSelected]}>
+                    1236.****.****.1236
+                  </Text>
                 </View>
               </TouchableOpacity>
             </>
           )}
 
-          {/* Payment Details */}
+          {/* Detalhes de Pagamento */}
           <View style={styles.paymentDetails}>
             <View style={styles.detailDivider} />
             <Text style={styles.detailTitle}>Detalhes de pagamento</Text>
+            
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Total dos produtos</Text>
               <Text style={styles.detailValue}>R$ {total.toFixed(2).replace('.', ',')}</Text>
             </View>
+            
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Total do frete</Text>
               <Text style={styles.detailValue}>R$ {shipping.toFixed(2).replace('.', ',')}</Text>
             </View>
+            
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Cupom de desconto</Text>
               <Text style={styles.detailValue}>R$ {discount.toFixed(2).replace('.', ',')}</Text>
             </View>
+            
             <View style={styles.detailDivider} />
+            
             <View style={styles.detailRow}>
               <Text style={styles.totalLabel}>Total</Text>
               <Text style={styles.grandTotal}>R$ {grandTotal.toFixed(2).replace('.', ',')}</Text>
@@ -159,11 +186,14 @@ export default function CheckoutPage() {
           </Button>
         </View>
       </ScrollView>
+      
       <Navbar />
 
+      {/* Modais */}
       <Modal visible={showAddAddress} animationType="slide" transparent>
         <AddAddressModal onClose={() => setShowAddAddress(false)} />
       </Modal>
+      
       <Modal visible={showAddCard} animationType="slide" transparent>
         <AddCardModal onClose={() => setShowAddCard(false)} />
       </Modal>
@@ -198,7 +228,7 @@ const styles = StyleSheet.create({
   sizeBadge: { borderWidth: 1, borderColor: Colors.primary, borderRadius: 4, paddingHorizontal: 8, paddingVertical: 2 },
   sizeText: { fontFamily: Fonts.newsreader, fontSize: 16, color: Colors.primary },
   itemTotalLabel: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary },
-  itemTotalPrice: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.darkAccent },
+  itemTotalPrice: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.darkAccent || '#000' },
   paymentMethodRow: { flexDirection: 'row', gap: 12 },
   paymentOption: {
     width: 60, height: 50, borderRadius: 8, borderWidth: 1, borderColor: Colors.primary,
@@ -223,5 +253,5 @@ const styles = StyleSheet.create({
   detailLabel: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.primary },
   detailValue: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.primary },
   totalLabel: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary },
-  grandTotal: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.darkAccent },
+  grandTotal: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.darkAccent || '#000' },
 });

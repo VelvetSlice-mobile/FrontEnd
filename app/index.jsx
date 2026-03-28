@@ -2,43 +2,59 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Cake, CakeSlice, Cherry, Candy } from 'lucide-react-native';
+
+// Importação de dados e constantes
 import { products } from '../src/data/products';
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
+
+// Importação de componentes
 import { Navbar } from '../src/components/Navbar';
 import { Header } from '../src/components/Header';
 import { ProductCard } from '../src/components/ProductCard';
 
 const { width } = Dimensions.get('window');
 
-const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  Bolo: <Cake size={28} color={Colors.primary} />,
-  Choco: <CakeSlice size={28} color={Colors.primary} />,
-  Frutas: <Cherry size={28} color={Colors.primary} />,
-  Doces: <Candy size={28} color={Colors.primary} />,
+// Ajuste na estrutura dos ícones para JavaScript puro
+const getCategoryIcon = (category) => {
+  const iconProps = { size: 28, color: Colors.primary };
+  switch (category) {
+    case 'Bolo': return <Cake {...iconProps} />;
+    case 'Choco': return <CakeSlice {...iconProps} />;
+    case 'Frutas': return <Cherry {...iconProps} />;
+    case 'Doces': return <Candy {...iconProps} />;
+    default: return null;
+  }
 };
 
 export default function HomePage() {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  // Estado sem tipagem estática
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const categories = ['Bolo', 'Choco', 'Frutas', 'Doces'];
 
   const filteredProducts = selectedCategory
-    ? products.filter((p) => p.category.toLowerCase().includes(selectedCategory.toLowerCase()))
+    ? products.filter((p) => 
+        p.category.toLowerCase().includes(selectedCategory.toLowerCase())
+      )
     : products;
 
   return (
     <View style={styles.mainContainer}>
       <Header />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Offers Carousel */}
+      
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {/* Carrossel de Ofertas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Ofertas</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <TouchableOpacity
               style={styles.offerCard}
-              onPress={() => router.push('/product/1' as never)}
+              onPress={() => router.push('/product/1')}
               activeOpacity={0.8}
             >
               <View style={styles.offerContent}>
@@ -53,7 +69,7 @@ export default function HomePage() {
 
             <TouchableOpacity
               style={styles.offerCard}
-              onPress={() => router.push('/product/2' as never)}
+              onPress={() => router.push('/product/2')}
               activeOpacity={0.8}
             >
               <View style={styles.offerContent}>
@@ -67,7 +83,7 @@ export default function HomePage() {
           </ScrollView>
         </View>
 
-        {/* Categories */}
+        {/* Categorias */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Categorias</Text>
           <View style={styles.categoriesRow}>
@@ -80,14 +96,14 @@ export default function HomePage() {
                 ]}
                 onPress={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
               >
-                {CATEGORY_ICONS[cat]}
+                {getCategoryIcon(cat)}
                 <Text style={styles.categoryText}>{cat}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Products Grid */}
+        {/* Grade de Produtos */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Só os melhores</Text>
           <View style={styles.gridContainer}>
@@ -97,6 +113,7 @@ export default function HomePage() {
           </View>
         </View>
       </ScrollView>
+      
       <Navbar />
     </View>
   );
@@ -108,7 +125,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: Fonts.newsreader,
     fontSize: 16,
-    color: Colors.black,
+    color: Colors.black || '#000',
     marginBottom: 10,
   },
   offerCard: {

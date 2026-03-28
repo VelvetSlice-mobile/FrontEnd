@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+
+// Importação de constantes e componentes
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { FormInput } from '../src/components/FormInput';
@@ -8,27 +10,40 @@ import { Button } from '../src/components/Button';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  
+  // Estados em JavaScript puro
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleReset = () => {
+    // Validação de campos vazios
     if (!email || !newPassword || !confirmPassword) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
+    
+    // Validação de coincidência de senhas
     if (newPassword !== confirmPassword) {
       Alert.alert('Erro', 'As senhas não coincidem');
       return;
     }
+
+    // Simulação de redefinição com sucesso
     Alert.alert('Sucesso', 'Senha redefinida com sucesso!', [
       { text: 'OK', onPress: () => router.replace('/login') },
     ]);
   };
 
   return (
-    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView 
+      style={styles.screen} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.card}>
           <Text style={styles.title}>Velvet Slice</Text>
           <Text style={styles.subtitle}>Esqueceu senha?</Text>
@@ -49,6 +64,7 @@ export default function ResetPasswordPage() {
             label="Nova senha"
             placeholder="••••••••••••"
             icon="password"
+            secureTextEntry={true} // Adicionado para segurança
             value={newPassword}
             onChangeText={setNewPassword}
           />
@@ -57,6 +73,7 @@ export default function ResetPasswordPage() {
             label="Confirmar nova senha"
             placeholder="••••••••••••"
             icon="password"
+            secureTextEntry={true} // Adicionado para segurança
             value={confirmPassword}
             onChangeText={setConfirmPassword}
           />
@@ -67,7 +84,8 @@ export default function ResetPasswordPage() {
 
           <View style={styles.divider} />
 
-          <TouchableOpacity onPress={() => router.push('/register' as never)}>
+          {/* Link para cadastro caso o usuário não tenha conta */}
+          <TouchableOpacity onPress={() => router.push('/register')}>
             <Text style={styles.registerText}>
               Ainda não possui conta? Crie uma <Text style={styles.linkUnderline}>aqui</Text>!
             </Text>
@@ -79,22 +97,50 @@ export default function ResetPasswordPage() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.background },
-  scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  screen: { 
+    flex: 1, 
+    backgroundColor: Colors.background 
+  },
+  scrollContent: { 
+    flexGrow: 1, 
+    justifyContent: 'center', 
+    padding: 24 
+  },
   card: {
     backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 16,
     gap: 16,
-    shadowColor: Colors.primary,
+    shadowColor: Colors.primary || '#000',
     shadowOpacity: 0.24,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 0 },
     elevation: 8,
   },
-  title: { fontFamily: Fonts.newsreader, fontSize: 24, color: Colors.primary, textAlign: 'center' },
-  subtitle: { fontFamily: Fonts.poppins, fontSize: 14, color: Colors.primary, textAlign: 'center' },
-  divider: { height: 1, backgroundColor: Colors.secondary, marginVertical: 4 },
-  linkUnderline: { textDecorationLine: 'underline' },
-  registerText: { fontFamily: Fonts.josefinSans, fontSize: 14, color: Colors.greenText, textAlign: 'center' },
+  title: { 
+    fontFamily: Fonts.newsreader, 
+    fontSize: 24, 
+    color: Colors.primary, 
+    textAlign: 'center' 
+  },
+  subtitle: { 
+    fontFamily: Fonts.poppins, 
+    fontSize: 14, 
+    color: Colors.primary, 
+    textAlign: 'center' 
+  },
+  divider: { 
+    height: 1, 
+    backgroundColor: Colors.secondary || '#ccc', 
+    marginVertical: 4 
+  },
+  linkUnderline: { 
+    textDecorationLine: 'underline' 
+  },
+  registerText: { 
+    fontFamily: Fonts.josefinSans || 'sans-serif', 
+    fontSize: 14, 
+    color: Colors.greenText || 'green', 
+    textAlign: 'center' 
+  },
 });

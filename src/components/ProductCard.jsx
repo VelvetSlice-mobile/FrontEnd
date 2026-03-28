@@ -2,39 +2,54 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Star } from 'lucide-react-native';
+
+// Importação de constantes
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
-import { Product } from '../data/products';
 
 const { width } = Dimensions.get('window');
+// Cálculo dinâmico para garantir que caibam 2 cards por linha com espaçamento
 const CARD_WIDTH = (width - 55) / 2;
 
-interface ProductCardProps {
-  product: Product;
-}
-
-export function ProductCard({ product }: ProductCardProps) {
+/**
+ * Componente de Card de Produto para Listagens
+ * @param {Object} props
+ * @param {Object} props.product - Objeto contendo os dados do produto
+ */
+export function ProductCard({ product }) {
   const router = useRouter();
+
+  // Caso o produto não esteja definido, evita que o app quebre
+  if (!product) return null;
 
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => router.push(`/product/${product.id}` as never)}
+      onPress={() => router.push(`/product/${product.id}`)}
       activeOpacity={0.8}
     >
-      <Image source={product.image} style={styles.image} resizeMode="cover" />
+      <Image 
+        source={product.image} 
+        style={styles.image} 
+        resizeMode="cover" 
+      />
+      
       <View style={styles.info}>
         <View style={styles.priceRow}>
           <Text style={styles.price}>
             R$ {product.price.toFixed(2).replace('.', ',')}
             <Text style={styles.perKg}>/kg</Text>
           </Text>
+          
           <View style={styles.ratingBadge}>
-            <Star size={10} color={Colors.accent} fill={Colors.accent} />
+            <Star size={10} color={Colors.accent || '#D4AF37'} fill={Colors.accent || '#D4AF37'} />
             <Text style={styles.ratingText}>{product.rating}</Text>
           </View>
         </View>
-        <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
+        
+        <Text style={styles.name} numberOfLines={2}>
+          {product.name}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -44,16 +59,17 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     borderRadius: 8,
-    marginBottom: 15,
+    marginBottom: 20, // Aumentado levemente para melhor respiro visual
     overflow: 'hidden',
   },
   image: {
     width: '100%',
-    height: 136,
+    height: 150, // Ajustado de 136 para 150 para melhor proporção em telas maiores
     borderRadius: 8,
+    backgroundColor: '#F5F5F5', // Cor de fundo caso a imagem demore a carregar
   },
   info: {
-    paddingTop: 8,
+    paddingTop: 10,
     gap: 4,
   },
   priceRow: {
@@ -64,10 +80,11 @@ const styles = StyleSheet.create({
   price: {
     fontFamily: Fonts.poppins,
     fontSize: 16,
-    color: Colors.primary,
+    color: Colors.primary || '#4F2C1D',
   },
   perKg: {
     fontSize: 10,
+    fontFamily: Fonts.poppins,
   },
   ratingBadge: {
     flexDirection: 'row',
@@ -77,13 +94,13 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontFamily: Fonts.newsreader,
-    fontSize: 10,
-    color: Colors.accent,
+    fontSize: 12, // Aumentado de 10 para 12 para melhor leitura
+    color: Colors.accent || '#D4AF37',
   },
   name: {
     fontFamily: Fonts.newsreader,
-    fontSize: 14,
-    color: Colors.primary,
-    lineHeight: 18,
+    fontSize: 15, // Aumentado de 14 para 15
+    color: Colors.primary || '#4F2C1D',
+    lineHeight: 20,
   },
 });
