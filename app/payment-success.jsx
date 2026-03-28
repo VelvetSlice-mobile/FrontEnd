@@ -3,11 +3,9 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CheckCircle } from 'lucide-react-native';
 
-// Importação de dados e contextos (Caminhos relativos ao seu projeto)
 import { products } from '../src/data/products';
 import { useCart } from '../src/contexts/CartContext';
 
-// Importação de componentes e constantes
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { Navbar } from '../src/components/Navbar';
@@ -19,7 +17,6 @@ export default function PaymentSuccessPage() {
   const router = useRouter();
   const { clearCart } = useCart();
 
-  // Efeito para limpar o carrinho assim que o usuário chega nesta tela
   useEffect(() => {
     if (clearCart) {
       clearCart();
@@ -28,7 +25,6 @@ export default function PaymentSuccessPage() {
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho superior */}
       <Header />
       
       <ScrollView 
@@ -37,7 +33,6 @@ export default function PaymentSuccessPage() {
       >
         <View style={styles.content}>
           
-          {/* Seção Principal de Sucesso */}
           <View style={styles.successSection}>
             <View style={styles.checkIconContainer}>
               <CheckCircle size={60} color={Colors.success || '#4CAF50'} />
@@ -50,7 +45,6 @@ export default function PaymentSuccessPage() {
               Vá para a página de <Text style={styles.boldItalic}>meus pedidos</Text> para acompanhar a sua entrega.
             </Text>
             
-            {/* Navegação simples sem tipagem TS */}
             <Button 
               onPress={() => router.push('/orders')} 
               style={styles.mainButton}
@@ -61,7 +55,6 @@ export default function PaymentSuccessPage() {
 
           <View style={styles.divider} />
 
-          {/* Seção de Recomendações (Upsell) */}
           <Text style={styles.sectionTitle}>Recomendações para você</Text>
           
           <View style={styles.grid}>
@@ -72,7 +65,6 @@ export default function PaymentSuccessPage() {
         </View>
       </ScrollView>
       
-      {/* Barra de navegação inferior */}
       <Navbar />
     </View>
   );
@@ -97,7 +89,6 @@ const styles = StyleSheet.create({
     paddingVertical: 30 
   },
   checkIconContainer: {
-    // Efeito de brilho/sombra no ícone de sucesso
     shadowColor: Colors.success || '#4CAF50',
     shadowOpacity: 0.4,
     shadowRadius: 15,

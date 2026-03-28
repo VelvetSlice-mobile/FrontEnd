@@ -9,7 +9,7 @@ import { Header } from '../src/components/Header';
 
 export default function PixPaymentPage() {
   const router = useRouter();
-  const [timeLeft, setTimeLeft] = useState(3599); // 59:59
+  const [timeLeft, setTimeLeft] = useState(3599);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -40,7 +40,6 @@ export default function PixPaymentPage() {
           <Text style={styles.pageTitle}>Comprar</Text>
           <Text style={styles.sectionTitle}>Método de pagamento</Text>
 
-          {/* QR Code Area */}
           <View style={styles.qrSection}>
             <View style={styles.qrPlaceholder}>
               <QrCode size={200} color={Colors.primary} />
@@ -57,7 +56,6 @@ export default function PixPaymentPage() {
             </View>
           </View>
 
-          {/* Payment Details */}
           <View style={styles.paymentDetails}>
             <View style={styles.divider} />
             <Text style={styles.detailTitle}>Detalhes de pagamento</Text>

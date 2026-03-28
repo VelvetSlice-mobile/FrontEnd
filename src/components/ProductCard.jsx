@@ -3,12 +3,10 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'rea
 import { useRouter } from 'expo-router';
 import { Star } from 'lucide-react-native';
 
-// Importação de constantes
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 
 const { width } = Dimensions.get('window');
-// Cálculo dinâmico para garantir que caibam 2 cards por linha com espaçamento
 const CARD_WIDTH = (width - 55) / 2;
 
 /**
@@ -19,7 +17,6 @@ const CARD_WIDTH = (width - 55) / 2;
 export function ProductCard({ product }) {
   const router = useRouter();
 
-  // Caso o produto não esteja definido, evita que o app quebre
   if (!product) return null;
 
   return (
@@ -59,14 +56,14 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     borderRadius: 8,
-    marginBottom: 20, // Aumentado levemente para melhor respiro visual
+    marginBottom: 20,
     overflow: 'hidden',
   },
   image: {
     width: '100%',
-    height: 150, // Ajustado de 136 para 150 para melhor proporção em telas maiores
+    height: 150,
     borderRadius: 8,
-    backgroundColor: '#F5F5F5', // Cor de fundo caso a imagem demore a carregar
+    backgroundColor: '#F5F5F5',
   },
   info: {
     paddingTop: 10,
@@ -94,12 +91,12 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontFamily: Fonts.newsreader,
-    fontSize: 12, // Aumentado de 10 para 12 para melhor leitura
+    fontSize: 12,
     color: Colors.accent || '#D4AF37',
   },
   name: {
     fontFamily: Fonts.newsreader,
-    fontSize: 15, // Aumentado de 14 para 15
+    fontSize: 15,
     color: Colors.primary || '#4F2C1D',
     lineHeight: 20,
   },

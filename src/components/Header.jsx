@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Bell } from 'lucide-react-native';
 
-// Importação de constantes
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 
@@ -18,7 +17,6 @@ export function Header() {
           <Text style={styles.title}>Velvet Slice</Text>
         </View>
         
-        {/* Botão de Notificações */}
         <TouchableOpacity 
           style={styles.bellButton}
           onPress={() => Alert.alert('Notificações', 'Você não tem novas mensagens.')}
@@ -34,13 +32,11 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.primary || '#1A1A1A',
     paddingTop: 60, 
-    paddingBottom: 25, // Aumentado um pouco para dar respiro sem a barra de busca
+    paddingBottom: 25,
     paddingHorizontal: 22,
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
-    // Sombra para Android
     elevation: 8,
-    // Sombra para iOS
     shadowColor: Colors.primary || '#000',
     shadowOpacity: 0.2,
     shadowRadius: 15,
@@ -61,7 +57,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: Fonts.newsreader,
-    fontSize: 28, // Aumentado para destacar a marca
+    fontSize: 28,
     color: Colors.background || '#FFF',
   },
   bellButton: {

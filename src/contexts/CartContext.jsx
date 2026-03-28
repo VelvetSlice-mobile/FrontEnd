@@ -7,7 +7,6 @@ export function CartProvider({ children }) {
 
   const addToCart = (product, selectedSize = '1Kg', quantity = 1) => {
     setItems(current => {
-      // O segredo está em procurar pelo ID + SIZE
       const existing = current.find(item => item.id === product.id && item.size === selectedSize);
       
       if (existing) {
@@ -36,7 +35,6 @@ export function CartProvider({ children }) {
 
   const clearCart = () => setItems([]);
 
-  // Calcula o total: Preço x Peso (número) x Quantidade
   const total = items.reduce((sum, item) => {
     const weightValue = parseInt(item.size) || 1; 
     return sum + (item.price * weightValue * item.quantity);

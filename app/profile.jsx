@@ -3,13 +3,11 @@ import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert, Mod
 import { useRouter } from 'expo-router';
 import { ChevronRight, Camera } from 'lucide-react-native';
 
-// Importação de constantes e contextos
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { IMAGES } from '../src/constants/Images';
 import { useAuth } from '../src/contexts/AuthContext';
 
-// Importação de componentes
 import { Navbar } from '../src/components/Navbar';
 import { Button } from '../src/components/Button';
 
@@ -18,7 +16,6 @@ export default function ProfilePage() {
   const { user, logout } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Itens de configuração baseados nos dados do usuário do Contexto
   const settingsItems = [
     { 
       label: 'Alterar nome', 
@@ -72,7 +69,6 @@ export default function ProfilePage() {
           <Text style={styles.title}>Configurações</Text>
           <Text style={styles.subtitle}>Perfil</Text>
 
-          {/* Avatar com botão de câmera */}
           <View style={styles.avatarContainer}>
             <Image 
               source={IMAGES.profile?.avatar || { uri: 'https://via.placeholder.com/100' }} 
@@ -83,7 +79,6 @@ export default function ProfilePage() {
             </TouchableOpacity>
           </View>
 
-          {/* Mapeamento dos itens de configuração */}
           {settingsItems.map((item) => (
             <TouchableOpacity
               key={item.label}
@@ -98,13 +93,11 @@ export default function ProfilePage() {
             </TouchableOpacity>
           ))}
 
-          {/* Botão de Sair */}
           <TouchableOpacity style={styles.settingCard} onPress={handleLogout}>
             <Text style={styles.settingLabel}>Sair</Text>
             <ChevronRight size={16} color={Colors.accent || '#D4AF37'} />
           </TouchableOpacity>
 
-          {/* Opção de Apagar Conta */}
           <TouchableOpacity onPress={() => setShowDeleteModal(true)}>
             <Text style={styles.deleteText}>Apagar conta</Text>
           </TouchableOpacity>
@@ -113,7 +106,6 @@ export default function ProfilePage() {
 
       <Navbar />
 
-      {/* Modal de Confirmação para Deletar Conta */}
       <Modal visible={showDeleteModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>

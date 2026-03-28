@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet, Alert } from 'react-native';
 
-// Importação de constantes e componentes locais
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { Button } from './Button';
 
 export function AddCardModal({ onClose }) {
-  // Estados em JavaScript puro
   const [holderName, setHolderName] = useState('');
   const [cpf, setCpf] = useState('');
   const [cardNumber, setCardNumber] = useState('');
@@ -15,7 +13,6 @@ export function AddCardModal({ onClose }) {
   const [expiry, setExpiry] = useState('');
 
   const handleAdd = () => {
-    // Validação básica
     if (!holderName || !cardNumber || !cvv || !expiry) {
       Alert.alert('Atenção', 'Por favor, preencha os dados do cartão.');
       return;

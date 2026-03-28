@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 
-// Importação de constantes e componentes locais
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { Button } from './Button';
 
 export function AddAddressModal({ onClose }) {
-  // Estados em JavaScript puro
   const [placeName, setPlaceName] = useState('');
   const [street, setStreet] = useState('');
   const [addressNumber, setAddressNumber] = useState('');
@@ -17,7 +15,6 @@ export function AddAddressModal({ onClose }) {
   const [complement, setComplement] = useState('');
 
   const handleAdd = () => {
-    // Validação simples antes de fechar
     if (!placeName || !street || !cep) {
       Alert.alert('Atenção', 'Por favor, preencha os campos principais.');
       return;
@@ -55,7 +52,6 @@ export function AddAddressModal({ onClose }) {
             />
           </View>
 
-          {/* Linha com múltiplos campos */}
           <View style={styles.row}>
             <View style={[styles.fieldGroup, { flex: 1 }]}>
               <Text style={styles.label}>Nº</Text>

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 
-// Importação de constantes e componentes
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { FormInput } from '../src/components/FormInput';
@@ -11,14 +10,12 @@ import { Button } from '../src/components/Button';
 export default function RegisterPage() {
   const router = useRouter();
   
-  // Estados em JavaScript puro
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleRegister = () => {
-    // Validação básica
     if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
@@ -29,7 +26,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Simulação de cadastro com sucesso
     Alert.alert('Sucesso', 'Conta criada com sucesso!', [
       { text: 'OK', onPress: () => router.replace('/login') },
     ]);
@@ -97,7 +93,6 @@ export default function RegisterPage() {
 
           <View style={styles.divider} />
 
-          {/* Link para voltar ao login */}
           <TouchableOpacity onPress={() => router.push('/login')}>
             <Text style={styles.registerText}>
               Já possui uma conta? Entre <Text style={styles.linkUnderline}>aqui</Text>!

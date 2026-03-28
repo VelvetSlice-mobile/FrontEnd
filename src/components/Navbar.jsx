@@ -3,7 +3,6 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Home, Search, ShoppingCart, User } from 'lucide-react-native';
 import { useRouter, usePathname } from 'expo-router';
 
-// Importação de constantes
 import { Colors } from '../constants/Colors';
 
 /**
@@ -20,9 +19,7 @@ export function Navbar() {
    * @returns {boolean}
    */
   const isActive = (path) => {
-    // Caso especial para a Home
     if (path === '/' && pathname === '/') return true;
-    // Para as demais rotas, verifica se o pathname começa com o caminho (ex: /cart, /profile)
     if (path !== '/' && pathname.startsWith(path)) return true;
     return false;
   };
@@ -77,25 +74,22 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    height: 75, // Aumentado levemente para melhor ergonomia
+    height: 75,
     backgroundColor: Colors.background || '#FFF',
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: 'rgba(79,44,29,0.1)',
-    // Sombra para Android
     elevation: 15,
-    // Sombra para iOS
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: -3 },
-    // Padding inferior para iPhones com "barra de home" (Safe Area)
     paddingBottom: 10,
   },
   iconContainer: { 
     padding: 12,
-    borderRadius: 20, // Preparado para caso queira adicionar um efeito de fundo ao clicar
+    borderRadius: 20,
   },
 });

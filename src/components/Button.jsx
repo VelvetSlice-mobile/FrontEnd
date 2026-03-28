@@ -1,7 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 
-// Importação de constantes
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 
@@ -50,7 +49,6 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     alignItems: 'center',
     justifyContent: 'center',
-    // Adicionado um feedback visual de toque para Android
     elevation: 2,
   },
   fullWidth: { 

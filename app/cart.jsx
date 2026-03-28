@@ -3,10 +3,8 @@ import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert, Tex
 import { useRouter } from 'expo-router';
 import { Plus, Minus, Trash2 } from 'lucide-react-native';
 
-// Importação do contexto do carrinho
 import { useCart } from '../src/contexts/CartContext';
 
-// Importação de constantes e componentes
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { Navbar } from '../src/components/Navbar';
@@ -48,7 +46,6 @@ export default function CartPage() {
           ) : (
             <>
               {items.map((item) => {
-                // Cálculo dinâmico do subtotal da linha
                 const weightMultiplier = parseInt(item.size) || 1;
                 const itemSubtotal = item.price * weightMultiplier * item.quantity;
 
@@ -67,7 +64,6 @@ export default function CartPage() {
                       <View style={styles.sizeRow}>
                         <Text style={styles.sizeLabel}>Tamanho:</Text>
                         <View style={styles.sizeBadge}>
-                          {/* AQUI EXIBE O PESO REAL (1Kg, 3Kg, etc) */}
                           <Text style={styles.sizeText}>{item.size}</Text>
                         </View>
                       </View>

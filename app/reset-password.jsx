@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 
-// Importação de constantes e componentes
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { FormInput } from '../src/components/FormInput';
@@ -11,25 +10,21 @@ import { Button } from '../src/components/Button';
 export default function ResetPasswordPage() {
   const router = useRouter();
   
-  // Estados em JavaScript puro
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleReset = () => {
-    // Validação de campos vazios
     if (!email || !newPassword || !confirmPassword) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
     
-    // Validação de coincidência de senhas
     if (newPassword !== confirmPassword) {
       Alert.alert('Erro', 'As senhas não coincidem');
       return;
     }
 
-    // Simulação de redefinição com sucesso
     Alert.alert('Sucesso', 'Senha redefinida com sucesso!', [
       { text: 'OK', onPress: () => router.replace('/login') },
     ]);
@@ -64,7 +59,7 @@ export default function ResetPasswordPage() {
             label="Nova senha"
             placeholder="••••••••••••"
             icon="password"
-            secureTextEntry={true} // Adicionado para segurança
+            secureTextEntry={true}
             value={newPassword}
             onChangeText={setNewPassword}
           />
@@ -73,7 +68,7 @@ export default function ResetPasswordPage() {
             label="Confirmar nova senha"
             placeholder="••••••••••••"
             icon="password"
-            secureTextEntry={true} // Adicionado para segurança
+            secureTextEntry={true}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
           />
@@ -84,7 +79,6 @@ export default function ResetPasswordPage() {
 
           <View style={styles.divider} />
 
-          {/* Link para cadastro caso o usuário não tenha conta */}
           <TouchableOpacity onPress={() => router.push('/register')}>
             <Text style={styles.registerText}>
               Ainda não possui conta? Crie uma <Text style={styles.linkUnderline}>aqui</Text>!

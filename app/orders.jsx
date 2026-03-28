@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Package, Truck, CheckCircle, ClipboardCopy } from 'lucide-react-native';
-
-// Importação de constantes e imagens
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { IMAGES } from '../src/constants/Images';
-
-// Importação de componentes
 import { Navbar } from '../src/components/Navbar';
 import { Header } from '../src/components/Header';
 import { Button } from '../src/components/Button';
-
-// Nota: Removido import de expo-linking se não for usado para Clipboard real, 
-// mas mantive a estrutura caso precise implementar a lógica depois.
 
 const STATUS_LABELS = {
   preparing: 'Preparando',
@@ -32,7 +25,7 @@ const mockOrders = [
         size: '1Kg', 
         quantity: 2, 
         total: 390, 
-        image: IMAGES.bolos?.morango || null // Fallback caso a estrutura de IMAGES mude
+        image: IMAGES.bolos?.morango || null
       },
     ],
     orderTotal: 95,
@@ -60,7 +53,6 @@ export default function OrdersPage() {
   const filteredOrders = mockOrders.filter((o) => o.status === activeTab);
 
   const handleCopyTracking = (code) => {
-    // Aqui você pode adicionar Clipboard.setStringAsync(code) se instalar o expo-clipboard
     Alert.alert('Copiado', `Código ${code} copiado!`);
   };
 
@@ -79,7 +71,6 @@ export default function OrdersPage() {
 
           <View style={styles.divider} />
 
-          {/* Abas de Status */}
           <View style={styles.tabsRow}>
             {statusOptions.map((status) => (
               <TouchableOpacity
@@ -109,13 +100,11 @@ export default function OrdersPage() {
             ))}
           </View>
 
-          {/* Lista de Pedidos */}
           {filteredOrders.length === 0 ? (
             <Text style={styles.emptyText}>Nenhum pedido nesta categoria.</Text>
           ) : (
             filteredOrders.map((order) => (
               <View key={order.id} style={styles.orderCard}>
-                {/* Cabeçalho do Pedido */}
                 <View style={styles.orderHeader}>
                   <View style={styles.trackingRow}>
                     <Text style={styles.trackingLabel}>Rastreio:</Text>
@@ -130,7 +119,6 @@ export default function OrdersPage() {
                   <Text style={styles.orderStatus}>{STATUS_LABELS[order.status]}</Text>
                 </View>
 
-                {/* Detalhes dos Itens */}
                 <View style={styles.orderItems}>
                   <Text style={styles.itemsTitle}>Itens pedidos</Text>
                   <View style={styles.itemDivider} />
