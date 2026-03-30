@@ -7,7 +7,7 @@ import { Navbar } from '../src/components/Navbar';
 import { Header } from '../src/components/Header';
 import { Button } from '../src/components/Button';
 import { IMAGES } from '../src/constants/Images';
-import * as Clipboard from 'expo-linking';
+
 
 type OrderStatus = 'preparing' | 'in_transit' | 'delivered';
 

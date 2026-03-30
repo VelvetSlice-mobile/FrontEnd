@@ -1,9 +1,9 @@
-import React from 'react';
+import * as React from 'react';
 import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 
-interface ButtonProps extends TouchableOpacityProps {
+interface ButtonProps extends Omit<TouchableOpacityProps, 'children'> {
   children: React.ReactNode;
   fullWidth?: boolean;
   variant?: 'solid' | 'outline';

@@ -1,12 +1,38 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Bell, Search } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import { Colors } from '../constants/Colors';
-import { Fonts } from '../constants/Fonts';
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+} from "react-native";
+import { Bell, Search } from "lucide-react-native";
+import { useRouter, usePathname } from 'expo-router'; 
+import { Colors } from "../constants/Colors";
+import { Fonts } from "../constants/Fonts";
 
-export function Header() {
+interface HeaderProps {
+  value?: string;
+  onChangeText?: (text: string) => void;
+  autoFocus?: boolean;
+}
+
+export function Header({ value, onChangeText, autoFocus }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname(); 
+
+  const handleSearchChange = (text: string) => {
+    if (onChangeText) {
+      onChangeText(text);
+    }
+
+    if (pathname === "/" && text.length > 0) {
+      router.push({
+        pathname: "/search",
+        params: { q: text }, 
+      });
+    }
+  };
 
   return (
     <View style={styles.header}>
@@ -19,13 +45,19 @@ export function Header() {
           <Bell size={16} color={Colors.background} />
         </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.searchBar}
-        onPress={() => router.push('/search' as never)}
-      >
+
+      <View style={styles.searchBar}>
         <Search size={14} color={Colors.secondary} />
-        <Text style={styles.searchText}>Pesquisar</Text>
-      </TouchableOpacity>
+        <TextInput
+          style={styles.searchInputField}
+          placeholder="Pesquisar"
+          placeholderTextColor={Colors.secondary}
+          value={value}
+          onChangeText={handleSearchChange}
+          autoFocus={autoFocus}
+          underlineColorAndroid="transparent"
+        />
+      </View>
     </View>
   );
 }
@@ -45,9 +77,9 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   titleContainer: {
     gap: 4,
@@ -71,8 +103,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     height: 30,
     borderRadius: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     gap: 10,
   },
@@ -80,5 +112,14 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.poppins,
     fontSize: 12,
     color: Colors.secondary,
+  },
+  searchInputField: {
+    flex: 1,
+    fontFamily: Fonts.poppins,
+    fontSize: 12,
+    color: Colors.secondary,
+    height: "100%",
+    padding: 0,
+    ...({ outlineStyle: 'none' } as any),
   },
 });
