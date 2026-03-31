@@ -1,11 +1,17 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useFonts, Newsreader_400Regular, Newsreader_700Bold, Newsreader_400Regular_Italic } from '@expo-google-fonts/newsreader';
+
+import { 
+  useFonts, 
+  Newsreader_400Regular, 
+  Newsreader_700Bold, 
+  Newsreader_400Regular_Italic 
+} from '@expo-google-fonts/newsreader';
 import { Poppins_400Regular } from '@expo-google-fonts/poppins';
 import { JosefinSans_400Regular } from '@expo-google-fonts/josefin-sans';
+
 import { CartProvider } from '../src/contexts/CartContext';
 import { AuthProvider } from '../src/contexts/AuthContext';
 
@@ -31,10 +37,10 @@ export default function Layout() {
   }
 
   return (
-    <SafeAreaProvider>
     <AuthProvider>
       <CartProvider>
-        <StatusBar style="light" />
+        <StatusBar style="dark" /> 
+        
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="login" />
@@ -47,7 +53,9 @@ export default function Layout() {
           <Stack.Screen name="payment-success" />
           <Stack.Screen name="orders" />
           <Stack.Screen name="profile" />
+          
           <Stack.Screen name="product/[id]" />
+          
           <Stack.Screen name="settings/edit-name" />
           <Stack.Screen name="settings/edit-phone" />
           <Stack.Screen name="settings/edit-email" />
@@ -55,6 +63,5 @@ export default function Layout() {
         </Stack>
       </CartProvider>
     </AuthProvider>
-  </SafeAreaProvider>
   );
 }

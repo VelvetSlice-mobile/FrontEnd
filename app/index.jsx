@@ -1,69 +1,89 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { Redirect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Cake, CakeSlice, Cherry, Candy } from 'lucide-react-native';
+
+// Importação de dados e constantes
 import { products } from '../src/data/products';
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
+
+// Importação de componentes
 import { Navbar } from '../src/components/Navbar';
 import { Header } from '../src/components/Header';
 import { ProductCard } from '../src/components/ProductCard';
 
 const { width } = Dimensions.get('window');
 
-const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  Bolo: <Cake size={28} color={Colors.primary} />,
-  Choco: <CakeSlice size={28} color={Colors.primary} />,
-  Frutas: <Cherry size={28} color={Colors.primary} />,
-  Doces: <Candy size={28} color={Colors.primary} />,
+// Ajuste na estrutura dos ícones para JavaScript puro
+const getCategoryIcon = (category) => {
+  const iconProps = { size: 28, color: Colors.primary };
+  switch (category) {
+    case 'Bolo': return <Cake {...iconProps} />;
+    case 'Choco': return <CakeSlice {...iconProps} />;
+    case 'Frutas': return <Cherry {...iconProps} />;
+    case 'Doces': return <Candy {...iconProps} />;
+    default: return null;
+  }
 };
 
 export default function HomePage() {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  // Estado sem tipagem estática
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const categories = ['Bolo', 'Choco', 'Frutas', 'Doces'];
 
   const filteredProducts = selectedCategory
-    ? products.filter((p) => p.category.toLowerCase().includes(selectedCategory.toLowerCase()))
+    ? products.filter((p) => 
+        p.category.toLowerCase().includes(selectedCategory.toLowerCase())
+      )
     : products;
 
   return (
     <View style={styles.mainContainer}>
       <Header />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Offers Carousel */}
+      
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {/* Carrossel de Ofertas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Ofertas</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {products.filter(p => p.price < 50).map((product) => ( 
-              <TouchableOpacity
-                key={product.id}
-                style={styles.offerCard}
-                onPress={() => router.push(`/product/${product.id}` as any)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.offerInnerContent}>
-                  <View style={styles.offerTextSection}>
-                    <Text style={styles.offerSubtitle}>Especiais{'\n'}{product.name}s</Text>
-                    <Text style={styles.offerDiscount}>OFF 60%</Text>
-                    <View style={styles.offerButton}>
-                      <Text style={styles.offerButtonText}>Ver</Text>
-                    </View>
-                  </View>
-                  
-                  <Image 
-                    source={product.image} 
-                    style={styles.offerImage} 
-                    resizeMode="cover" 
-                  />
+            <TouchableOpacity
+              style={styles.offerCard}
+              onPress={() => router.push('/product/1')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.offerContent}>
+                <Text style={styles.offerSubtitle}>Especiais{'\n'}Chocolatudos</Text>
+                <Text style={styles.offerDiscount}>OFF 60%</Text>
+                <View style={styles.offerButton}>
+                  <Text style={styles.offerButtonText}>Ver</Text>
                 </View>
-              </TouchableOpacity>
-            ))}
+              </View>
+              <Image source={products[0].image} style={styles.offerImage} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.offerCard}
+              onPress={() => router.push('/product/2')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.offerContent}>
+                <Text style={styles.offerSubtitle}>Especiais{'\n'}Frutudos</Text>
+                <Text style={styles.offerDiscount}>OFF 60%</Text>
+                <View style={styles.offerButton}>
+                  <Text style={styles.offerButtonText}>Ver</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
           </ScrollView>
         </View>
 
-        {/* Categories */}
+        {/* Categorias */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Categorias</Text>
           <View style={styles.categoriesRow}>
@@ -76,14 +96,14 @@ export default function HomePage() {
                 ]}
                 onPress={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
               >
-                {CATEGORY_ICONS[cat]}
+                {getCategoryIcon(cat)}
                 <Text style={styles.categoryText}>{cat}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Products Grid */}
+        {/* Grade de Produtos */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Só os melhores</Text>
           <View style={styles.gridContainer}>
@@ -93,6 +113,7 @@ export default function HomePage() {
           </View>
         </View>
       </ScrollView>
+      
       <Navbar />
     </View>
   );
@@ -104,39 +125,21 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: Fonts.newsreader,
     fontSize: 16,
-    color: Colors.black,
+    color: Colors.black || '#000',
     marginBottom: 10,
   },
-offerCard: {
+  offerCard: {
     backgroundColor: Colors.background,
     width: 280,
     height: 150,
-    borderRadius: 15,
+    borderRadius: 8,
     marginRight: 15,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    borderWidth: 0, 
-    overflow: 'visible', 
-  },
-  offerInnerContent: {
-    flex: 1,
+    borderWidth: 1,
+    borderColor: Colors.primary,
     flexDirection: 'row',
-    borderRadius: 15,
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: Colors.primary, 
-    backgroundColor: Colors.background,
   },
-  offerTextSection: { 
-    padding: 15,
-    width: '60%',
-    justifyContent: 'center',
-    zIndex: 2,
-    backgroundColor: 'transparent', 
-  },
+  offerContent: { padding: 15, flex: 1, justifyContent: 'center', gap: 4 },
   offerSubtitle: { fontFamily: Fonts.newsreader, fontSize: 16, color: Colors.primary },
   offerDiscount: { fontFamily: Fonts.newsreader, fontSize: 16, color: Colors.accent },
   offerButton: {
@@ -149,23 +152,15 @@ offerCard: {
   },
   offerButtonText: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.background },
   offerImage: {
-    width: 140,
-    height: '100%',
+    width: 120,
+    height: '120%',
     position: 'absolute',
-    right: 0, 
-    top: 0,
-    zIndex: 1,
-    borderLeftWidth: 6,
-    borderLeftColor: Colors.primary, 
-    borderTopLeftRadius: 200,
-    borderBottomLeftRadius: 100,
-    elevation: 5,
-    borderColor: Colors.primary, 
-
+    right: -20,
+    top: -10,
+    borderRadius: 100,
   },
   categoriesRow: { flexDirection: 'row', justifyContent: 'space-between' },
   categoryButton: {
-    backgroundColor: Colors.background,
     borderRadius: 100,
     borderWidth: 1,
     borderColor: Colors.primary,
@@ -175,11 +170,6 @@ offerCard: {
     paddingHorizontal: 12,
     gap: 6,
     width: (width - 80) / 4,
-    elevation: 3, 
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   categoryActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
   categoryText: { fontFamily: Fonts.newsreader, fontSize: 10, color: Colors.primary },
