@@ -17,7 +17,7 @@ export const products: Product[] = [
     description: 'Massa fofinha de chocolate com cobertura cremosa e granulado.',
     price: 45.90,
     image: IMAGES.bolos.chocolate,
-    category: 'Tradicionais',
+    category: 'Choco',
     rating: 4.8,
   },
   {
@@ -35,7 +35,7 @@ export const products: Product[] = [
     description: 'O clássico veludo vermelho com recheio autêntico de cream cheese.',
     price: 75.50,
     image: IMAGES.bolos.veludo,
-    category: 'Especiais',
+    category: 'Bolo',
     rating: 5.0,
   },
     {
@@ -44,7 +44,7 @@ export const products: Product[] = [
     description: 'Massa de baunilha com recheio e cobertura de caramelo salgado.',
     price: 55.00,
     image: IMAGES.bolos.caramelo,
-    category: 'Especiais',
+    category: 'Doces',
     rating: 4.7,
   },
   {
@@ -53,7 +53,7 @@ export const products: Product[] = [
     description: 'Massa caseira de laranja com cobertura simples de açúcar de confeiteiro.',
     price: 40.00,
     image: IMAGES.bolos.caseirinho,
-    category: 'Tradicionais',
+    category: 'Bolo',
     rating: 4.6,
   },
   {
@@ -62,7 +62,7 @@ export const products: Product[] = [
     description: 'Massa de baunilha com recheio de creme e cobertura de chantilly.',
     price: 50.00,
     image: IMAGES.bolos.encanto,
-    category: 'Especiais',
+    category: 'Doces',
     rating: 4.8,
   },
   {
@@ -71,7 +71,7 @@ export const products: Product[] = [
     description: 'Massa de doce de leite com recheio e cobertura do mesmo sabor.',
     price: 60.00,
     image: IMAGES.bolos.melamor,
-    category: 'Especiais',
+    category: 'Doces',
     rating: 4.9,
   },
 {

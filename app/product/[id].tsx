@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert, Share } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Heart, Star, Share2 } from 'lucide-react-native';
@@ -22,7 +22,7 @@ export default function ProductDetailPage() {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Produto não encontrado</Text>
-        <Button onPress={() => router.back()} style={{ marginTop: 20 }}>Voltar</Button>
+        <Button onPress={() => router.back()} style={{ marginTop: 20 }} children="Voltar" />
       </View>
     );
   }
