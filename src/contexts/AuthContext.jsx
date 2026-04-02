@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
    */
   const login = async (email, pass) => {
     try {
-      const apiUrl = 'http://192.168.1.15:3000/api/login'; 
+      const apiUrl = 'http:/ 192.168.1.9:3000/api/login'; 
 
       const response = await fetch(apiUrl, {
         method: 'POST',
