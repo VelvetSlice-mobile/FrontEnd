@@ -1,53 +1,31 @@
 import React, { createContext, useContext, useState } from 'react';
+import { authService } from '../../src/services/api';
 
 const AuthContext = createContext(undefined);
 
-/**
- * Provedor de Autenticação
- * Envolve a aplicação para prover estado de usuário e funções de login/logout
- */
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  /**
-   * Função de Login
-   * @param {string} email 
-   * @param {string} pass 
-   */
-  const login = async (email, pass) => {
+  const login = async (email, password) => {
     try {
-      const apiUrl = 'http:/ 192.168.1.9:3000/api/login'; 
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: email, senha: pass }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Falha na autenticação. Verifique suas credenciais.');
-      }
-
-      const data = await response.json();
-      
-      setUser({ 
-        id: data.id, 
-        name: data.nome,
-        email: data.email
-      });
-
+      const userData = await authService.login(email, password);
+      setUser(userData); 
+      return { success: true };
     } catch (error) {
-      console.error("Erro na comunicação com a API:", error.message);
-      throw error;
+      return { success: false, message: error.message };
     }
   };
 
-  /**
-   * Função de Logout
-   */
+  const register = async (userData) => {
+    try {
+      const result = await authService.register(userData);
+      setUser(result);
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message || "Erro ao registrar" };
+    }
+  };
+
   const logout = () => {
     setUser(null);
   };
@@ -58,6 +36,7 @@ export function AuthProvider({ children }) {
         user, 
         isAuthenticated: !!user, 
         login, 
+        register,
         logout 
       }}
     >
@@ -66,12 +45,9 @@ export function AuthProvider({ children }) {
   );
 }
 
-/**
- * Hook customizado para usar o contexto de autenticação
- */
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;
