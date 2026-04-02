@@ -1,37 +1,38 @@
-import React, { useEffect } from 'react';
+import { Newsreader_400Regular, Newsreader_700Bold, useFonts } from '@expo-google-fonts/newsreader';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-
-import { 
-  useFonts, 
-  Newsreader_400Regular, 
-  Newsreader_700Bold, 
-  Newsreader_400Regular_Italic 
-} from '@expo-google-fonts/newsreader';
-import { Poppins_400Regular } from '@expo-google-fonts/poppins';
-import { JosefinSans_400Regular } from '@expo-google-fonts/josefin-sans';
-
-import { CartProvider } from '../src/contexts/CartContext';
+import { useEffect } from 'react';
 import { AuthProvider } from '../src/contexts/AuthContext';
+import { CartProvider } from '../src/contexts/CartContext';
+import { initDatabase } from '../src/services/database'; // Certifique-se que o caminho está correto
 
+// Impede que a tela de splash suma antes das fontes carregarem
 SplashScreen.preventAutoHideAsync();
 
 export default function Layout() {
   const [fontsLoaded] = useFonts({
     Newsreader_400Regular,
     Newsreader_700Bold,
-    Newsreader_400Regular_Italic,
-    Poppins_400Regular,
-    JosefinSans_400Regular,
   });
 
+  // 1. Inicializa o Banco de Dados SQLite assim que o app abre
+  useEffect(() => {
+    try {
+      initDatabase();
+      console.log("SQLite: Banco de dados local inicializado com sucesso.");
+    } catch (error) {
+      console.error("SQLite: Erro ao iniciar banco local", error);
+    }
+  }, []);
+
+  // 2. Gerencia o fechamento da tela de Splash
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
 
+  // Enquanto as fontes não carregam, não renderiza nada
   if (!fontsLoaded) {
     return null;
   }
@@ -39,27 +40,23 @@ export default function Layout() {
   return (
     <AuthProvider>
       <CartProvider>
-        <StatusBar style="dark" /> 
-        
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: '#fff' }
+          }}
+        >
+          {/* Definição das rotas principais */}
           <Stack.Screen name="index" />
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />
-          <Stack.Screen name="reset-password" />
-          <Stack.Screen name="search" />
+          <Stack.Screen name="product/[id]" />
           <Stack.Screen name="cart" />
           <Stack.Screen name="checkout" />
-          <Stack.Screen name="pix-payment" />
           <Stack.Screen name="payment-success" />
           <Stack.Screen name="orders" />
           <Stack.Screen name="profile" />
-          
-          <Stack.Screen name="product/[id]" />
-          
-          <Stack.Screen name="settings/edit-name" />
-          <Stack.Screen name="settings/edit-phone" />
-          <Stack.Screen name="settings/edit-email" />
-          <Stack.Screen name="settings/edit-password" />
+          <Stack.Screen name="search" />
         </Stack>
       </CartProvider>
     </AuthProvider>

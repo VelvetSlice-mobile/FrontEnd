@@ -1,257 +1,118 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus, ChevronRight, CreditCard, QrCode } from 'lucide-react-native';
-
-// Importação de contextos e dados
-import { useCart } from '../src/contexts/CartContext';
-
-// Importação de componentes e estilos
+import React from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Header from '../src/components/Header';
 import { Colors } from '../src/constants/Colors';
-import { Fonts } from '../src/constants/Fonts';
-import { Navbar } from '../src/components/Navbar';
-import { Header } from '../src/components/Header';
-import { Button } from '../src/components/Button';
-import { AddAddressModal } from '../src/components/AddAddressModal';
-import { AddCardModal } from '../src/components/AddCardModal';
+import { useAuth } from '../src/contexts/AuthContext';
+import { useCart } from '../src/contexts/CartContext';
+import { database } from '../src/services/database'; // Importação do banco local
 
-export default function CheckoutPage() {
+export default function Checkout() {
   const router = useRouter();
-  const { items, total } = useCart();
-  
-  // Estados em JavaScript puro (sem tipagem estática)
-  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' ou 'pix'
-  const [selectedCard, setSelectedCard] = useState('credit'); // 'credit' ou 'debit'
-  const [showAddAddress, setShowAddAddress] = useState(false);
-  const [showAddCard, setShowAddCard] = useState(false);
+  const { cart, totalValue, clearCart } = useCart();
+  const { user } = useAuth();
 
-  const shipping = 80;
-  const discount = -20;
-  const grandTotal = total + shipping + discount;
+  const handleFinishOrder = async () => {
+    if (!user) {
+      Alert.alert("Erro", "Você precisa estar logado para finalizar o pedido.");
+      return;
+    }
 
-  const handlePurchase = () => {
-    if (paymentMethod === 'pix') {
-      router.push('/pix-payment');
-    } else {
+    // Criamos o objeto do pedido
+    const orderData = {
+      user_id: user.id,
+      total: totalValue,
+      items: JSON.stringify(cart), // Convertemos o array do carrinho para String (exigência do SQLite)
+      date: new Date().toLocaleString('pt-BR'),
+    };
+
+    try {
+      // 1. PERSISTÊNCIA LOCAL (Garante que o dado não se perca)
+      // Usamos o SQLite para salvar o pedido imediatamente no celular
+      database.runSync(
+        'INSERT INTO orders (user_id, total, items, date) VALUES (?, ?, ?, ?)',
+        [orderData.user_id, orderData.total, orderData.items, orderData.date]
+      );
+
+      // 2. TENTATIVA DE SINCRONIZAÇÃO COM O BACKEND
+      // O app tenta enviar para a API, mas se der erro (servidor desligado), cai no 'catch'
+      try {
+        const response = await fetch('http://192.168.1.10:3000/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData),
+        });
+        
+        if (!response.ok) throw new Error("Erro na API");
+        console.log("Pedido sincronizado com o servidor com sucesso!");
+      } catch (apiError) {
+        console.log("Aviso: Backend offline. O pedido foi salvo localmente no SQLite.");
+      }
+
+      // 3. FINALIZAÇÃO NO FRONTEND
+      clearCart();
       router.push('/payment-success');
+
+    } catch (dbError) {
+      console.error(dbError);
+      Alert.alert("Erro", "Não foi possível processar o pedido localmente.");
     }
   };
 
   return (
     <View style={styles.container}>
-      <Header />
+      <Header title="Finalizar Pedido" showBack />
       
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
-        contentContainerStyle={{ paddingBottom: 100 }}
-      >
-        <View style={styles.content}>
-          <Text style={styles.pageTitle}>Comprar</Text>
-
-          {/* Seção de Endereço */}
-          <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>Endereço</Text>
-            <TouchableOpacity onPress={() => setShowAddAddress(true)}>
-              <Plus size={20} color={Colors.primary} />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.addressCard}>
-            <View style={styles.addressIcon}>
-              <Text style={styles.addressIconText}>📍</Text>
-            </View>
-            <View style={styles.addressInfo}>
-              <Text style={styles.addressName}>Casa</Text>
-              <Text style={styles.addressText} numberOfLines={2}>
-                Avenida Paulista - de 612 a 1510 - lado par{'\n'}Bela Vista São Paulo/SP 01310-100
-              </Text>
-            </View>
-            <ChevronRight size={20} color={Colors.primary} />
-          </View>
-
-          {/* Seção de Itens */}
-          <Text style={styles.sectionTitle}>Itens</Text>
-          {items && items.map((item) => (
-            <View key={item.id} style={styles.orderItem}>
-              <Image source={item.image} style={styles.orderItemImage} />
-              <View style={styles.orderItemInfo}>
-                <Text style={styles.orderItemName}>{item.name}</Text>
-                <View style={styles.sizeRow}>
-                  <Text style={styles.labelText}>Tamanho:</Text>
-                  <View style={styles.sizeBadge}>
-                    <Text style={styles.sizeText}>1Kg</Text>
-                  </View>
-                </View>
-                <View style={styles.sizeRow}>
-                  <Text style={styles.labelText}>Quantidade:</Text>
-                  <Text style={styles.valueText}>{item.quantity}</Text>
-                </View>
-                <Text style={styles.itemTotalLabel}>Total</Text>
-                <Text style={styles.itemTotalPrice}>
-                  R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
-                </Text>
-              </View>
+      <ScrollView style={styles.content}>
+        <View style={styles.summaryCard}>
+          <Text style={styles.sectionTitle}>Resumo do Pedido</Text>
+          {cart.map((item) => (
+            <View key={item.id} style={styles.itemRow}>
+              <Text style={styles.itemText}>{item.quantity}x {item.name}</Text>
+              <Text style={styles.itemPrice}>R$ {(item.price * item.quantity).toFixed(2)}</Text>
             </View>
           ))}
-
-          {/* Método de Pagamento */}
-          <Text style={styles.sectionTitle}>Método de pagamento</Text>
-          <View style={styles.paymentMethodRow}>
-            <TouchableOpacity
-              style={[styles.paymentOption, paymentMethod === 'card' && styles.paymentOptionActive]}
-              onPress={() => setPaymentMethod('card')}
-            >
-              <CreditCard size={24} color={paymentMethod === 'card' ? Colors.background : Colors.primary} />
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.paymentOption, paymentMethod === 'pix' && styles.paymentOptionActive]}
-              onPress={() => setPaymentMethod('pix')}
-            >
-              <QrCode size={24} color={paymentMethod === 'pix' ? Colors.background : Colors.primary} />
-            </TouchableOpacity>
+          
+          <View style={styles.divider} />
+          
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total</Text>
+            <Text style={styles.totalValue}>R$ {totalValue.toFixed(2)}</Text>
           </View>
-
-          {paymentMethod === 'card' && (
-            <>
-              <View style={styles.sectionRow}>
-                <Text style={styles.savedCardsLabel}>Cartões salvos</Text>
-                <TouchableOpacity onPress={() => setShowAddCard(true)}>
-                  <Plus size={20} color={Colors.primary} />
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                style={[styles.cardOption, selectedCard === 'credit' && styles.cardOptionSelected]}
-                onPress={() => setSelectedCard('credit')}
-              >
-                <CreditCard size={20} color={selectedCard === 'credit' ? Colors.background : Colors.primary} />
-                <View style={styles.cardInfo}>
-                  <Text style={[styles.cardTitle, selectedCard === 'credit' && styles.cardTitleSelected]}>
-                    Cartão de crédito
-                  </Text>
-                  <Text style={[styles.cardNumber, selectedCard === 'credit' && styles.cardNumberSelected]}>
-                    1236.****.****.1236
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.cardOption, selectedCard === 'debit' && styles.cardOptionSelected]}
-                onPress={() => setSelectedCard('debit')}
-              >
-                <CreditCard size={20} color={selectedCard === 'debit' ? Colors.background : Colors.primary} />
-                <View style={styles.cardInfo}>
-                  <Text style={[styles.cardTitle, selectedCard === 'debit' && styles.cardTitleSelected]}>
-                    Cartão de débito
-                  </Text>
-                  <Text style={[styles.cardNumber, selectedCard === 'debit' && styles.cardNumberSelected]}>
-                    1236.****.****.1236
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {/* Detalhes de Pagamento */}
-          <View style={styles.paymentDetails}>
-            <View style={styles.detailDivider} />
-            <Text style={styles.detailTitle}>Detalhes de pagamento</Text>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Total dos produtos</Text>
-              <Text style={styles.detailValue}>R$ {total.toFixed(2).replace('.', ',')}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Total do frete</Text>
-              <Text style={styles.detailValue}>R$ {shipping.toFixed(2).replace('.', ',')}</Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Cupom de desconto</Text>
-              <Text style={styles.detailValue}>R$ {discount.toFixed(2).replace('.', ',')}</Text>
-            </View>
-            
-            <View style={styles.detailDivider} />
-            
-            <View style={styles.detailRow}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.grandTotal}>R$ {grandTotal.toFixed(2).replace('.', ',')}</Text>
-            </View>
-          </View>
-
-          <Button fullWidth onPress={handlePurchase}>
-            Comprar
-          </Button>
         </View>
-      </ScrollView>
-      
-      <Navbar />
 
-      {/* Modais */}
-      <Modal visible={showAddAddress} animationType="slide" transparent>
-        <AddAddressModal onClose={() => setShowAddAddress(false)} />
-      </Modal>
-      
-      <Modal visible={showAddCard} animationType="slide" transparent>
-        <AddCardModal onClose={() => setShowAddCard(false)} />
-      </Modal>
+        <TouchableOpacity style={styles.finishButton} onPress={handleFinishOrder}>
+          <Text style={styles.finishButtonText}>Confirmar e Pagar</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: 22, marginTop: 12, gap: 12 },
-  pageTitle: { fontFamily: Fonts.newsreader, fontSize: 24, color: Colors.black, textAlign: 'center' },
-  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { fontFamily: Fonts.newsreader, fontSize: 20, color: Colors.black },
-  addressCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: Colors.background, borderRadius: 8, borderWidth: 1, borderColor: Colors.primary, padding: 12,
+  content: { padding: 20 },
+  summaryCard: {
+    backgroundColor: '#FFF',
+    padding: 15,
+    borderRadius: 10,
+    elevation: 3,
+    marginBottom: 20
   },
-  addressIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
-  addressIconText: { fontSize: 20 },
-  addressInfo: { flex: 1, gap: 4 },
-  addressName: { fontFamily: Fonts.newsreaderBold, fontSize: 20, color: Colors.primary },
-  addressText: { fontFamily: Fonts.newsreader, fontSize: 16, color: Colors.primary },
-  orderItem: {
-    flexDirection: 'row', gap: 10, borderRadius: 8, borderWidth: 1, borderColor: Colors.secondary, padding: 10,
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: Colors.primary },
+  itemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  itemText: { fontSize: 16, color: '#333' },
+  itemPrice: { fontSize: 16, fontWeight: '500' },
+  divider: { height: 1, backgroundColor: '#EEE', marginVertical: 10 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  totalLabel: { fontSize: 18, fontWeight: 'bold' },
+  totalValue: { fontSize: 20, fontWeight: 'bold', color: Colors.primary },
+  finishButton: {
+    backgroundColor: Colors.primary,
+    padding: 18,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 40
   },
-  orderItemImage: { width: 100, height: 120, borderRadius: 8 },
-  orderItemInfo: { flex: 1, gap: 2 },
-  orderItemName: { fontFamily: Fonts.newsreader, fontSize: 24, color: Colors.primary },
-  sizeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  labelText: { fontFamily: Fonts.newsreader, fontSize: 16, color: Colors.primary },
-  valueText: { fontFamily: Fonts.newsreader, fontSize: 14, color: Colors.primary },
-  sizeBadge: { borderWidth: 1, borderColor: Colors.primary, borderRadius: 4, paddingHorizontal: 8, paddingVertical: 2 },
-  sizeText: { fontFamily: Fonts.newsreader, fontSize: 16, color: Colors.primary },
-  itemTotalLabel: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary },
-  itemTotalPrice: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.darkAccent || '#000' },
-  paymentMethodRow: { flexDirection: 'row', gap: 12 },
-  paymentOption: {
-    width: 60, height: 50, borderRadius: 8, borderWidth: 1, borderColor: Colors.primary,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  paymentOptionActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  savedCardsLabel: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.black },
-  cardOption: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, borderWidth: 1,
-    borderColor: Colors.primary, padding: 12,
-  },
-  cardOptionSelected: { backgroundColor: Colors.primary },
-  cardInfo: { gap: 2 },
-  cardTitle: { fontFamily: Fonts.newsreader, fontSize: 20, color: Colors.primary },
-  cardTitleSelected: { color: Colors.background },
-  cardNumber: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary },
-  cardNumberSelected: { color: Colors.background },
-  paymentDetails: { gap: 8 },
-  detailDivider: { height: 1, backgroundColor: Colors.secondary, opacity: 0.3 },
-  detailTitle: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary },
-  detailRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  detailLabel: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.primary },
-  detailValue: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.primary },
-  totalLabel: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary },
-  grandTotal: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.darkAccent || '#000' },
+  finishButtonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' }
 });
