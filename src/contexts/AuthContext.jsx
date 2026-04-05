@@ -5,7 +5,7 @@ const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-
+  // USEI PARA FAZER O TESTE DOS PEDIDOS, COLOQUE A LINHA DE CIMA COMO COMENTÁRIO E DEIXE ESSA ATIVA PARA TESTAR: const [user, setUser] = useState({ id: 1, name: 'Miguel Dev', email: 'teste@teste.com' });
   const login = async (email, password) => {
     try {
       const userData = await authService.login(email, password);

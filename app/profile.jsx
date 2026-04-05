@@ -37,6 +37,11 @@ export default function ProfilePage() {
       value: '**************', 
       route: '/settings/edit-password' 
     },
+    {
+      label: 'Meus Pedidos', 
+      value: 'Ver histórico', 
+      route: '/orders'
+    },
   ];
 
   const handleLogout = () => {
