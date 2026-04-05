@@ -1,6 +1,4 @@
-import React from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Fonts } from '../constants/Fonts';
 
 const DeleteAccountModal = ({ visible, onClose, onConfirm }) => {
@@ -13,9 +11,8 @@ const DeleteAccountModal = ({ visible, onClose, onConfirm }) => {
         >
             <View style={styles.overlay}>
                 <View style={styles.container}>
-                    {/* Ícone de Perigo enviado nas imagens */}
                     <Image
-                        source={require('../assets/images/Propriedade 1=perigo.png')}
+                        source={require('../assets/images/iconeovinho.png')}
                         style={styles.icon}
                     />
 
@@ -64,8 +61,10 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     icon: {
-        width: 40,
-        height: 40,
+        width: 29,
+        height: 37.3,
+        flexShrink: 0,
+        aspectRatio: 7 / 9,
         resizeMode: 'contain',
     },
     title: {
