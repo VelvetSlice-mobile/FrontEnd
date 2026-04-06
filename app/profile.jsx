@@ -20,7 +20,6 @@ export default function ProfilePage() {
     { label: 'Alterar telefone', value: user?.phone || '(11) 9****-**95', route: '/settings/edit-phone' },
     { label: 'Alterar email', value: user?.email || 'usuario@email.com', route: '/settings/edit-email' },
     { label: 'Alterar senha', value: '**************', route: '/settings/edit-password' },
-  ];
 
   const handleLogout = () => {
     logout();
@@ -29,7 +28,6 @@ export default function ProfilePage() {
 
   const handleDeleteAccount = async () => {
     try {
-      // Opcional: Adicione sua chamada de API aqui
       setShowDeleteModal(false);
       Alert.alert('Conta', 'Sua conta foi removida com sucesso.');
       logout();
