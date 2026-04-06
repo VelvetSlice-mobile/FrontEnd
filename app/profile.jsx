@@ -19,7 +19,7 @@ export default function ProfilePage() {
     { label: 'Alterar nome', value: user?.name || 'Nome usuário', route: '/settings/edit-name' },
     { label: 'Alterar telefone', value: user?.phone || '(11) 9****-**95', route: '/settings/edit-phone' },
     { label: 'Alterar email', value: user?.email || 'usuario@email.com', route: '/settings/edit-email' },
-    { label: 'Alterar senha', value: '**************', route: '/settings/edit-password' },
+    { label: 'Alterar senha', value: '**************', route: '/settings/edit-password' },]
 
   const handleLogout = () => {
     logout();
