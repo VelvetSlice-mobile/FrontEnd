@@ -1,10 +1,17 @@
 {
   "compilerOptions": {
-    "jsx": "react-native",
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "jsx": "react-native",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "exclude": ["node_modules", ".expo", "dist"]
+  "exclude": [
+    "node_modules",
+    ".expo",
+    "dist"
+  ]
 }
