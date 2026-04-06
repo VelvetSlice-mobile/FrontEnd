@@ -1,15 +1,15 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Header from '../src/components/Header';
+import { Header } from '../src/components/Header';
 import { Colors } from '../src/constants/Colors';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useCart } from '../src/contexts/CartContext';
-import { database } from '../src/services/database'; // Importação do banco local
+import { database } from '../src/services/database';
 
 export default function Checkout() {
   const router = useRouter();
-  const { cart, totalValue, clearCart } = useCart();
+  const { items: cart, total: totalValue, clearCart } = useCart();
   const { user } = useAuth();
 
   const handleFinishOrder = async () => {
@@ -18,38 +18,52 @@ export default function Checkout() {
       return;
     }
 
-    // Criamos o objeto do pedido
     const orderData = {
       user_id: user.id,
       total: totalValue,
-      items: JSON.stringify(cart), // Convertemos o array do carrinho para String (exigência do SQLite)
+      items: JSON.stringify(cart),
       date: new Date().toLocaleString('pt-BR'),
+      status: 'preparing'
     };
 
     try {
-      // 1. PERSISTÊNCIA LOCAL (Garante que o dado não se perca)
-      // Usamos o SQLite para salvar o pedido imediatamente no celular
       database.runSync(
-        'INSERT INTO orders (user_id, total, items, date) VALUES (?, ?, ?, ?)',
-        [orderData.user_id, orderData.total, orderData.items, orderData.date]
+        'INSERT INTO orders (user_id, total, items, date, status) VALUES (?, ?, ?, ?, ?)',
+        [orderData.user_id, orderData.total, orderData.items, orderData.date, orderData.status]
       );
 
-      // 2. TENTATIVA DE SINCRONIZAÇÃO COM O BACKEND
-      // O app tenta enviar para a API, mas se der erro (servidor desligado), cai no 'catch'
+      const lastOrder = database.getFirstSync(
+        'SELECT id FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 1',
+        [user.id]
+      );
+      const orderId = lastOrder ? lastOrder.id : '0000';
+
+      const firstItemName = cart.length > 0 ? cart[0].name : 'item';
+      const notificationDescription = cart.length > 1
+        ? `Seu pedido de ${firstItemName} e outros itens foi recebido e está aguardando processamento.`
+        : `Seu pedido de ${firstItemName} foi recebido e está aguardando processamento.`;
+
+      database.runSync(
+        'INSERT INTO notifications (user_id, title, message, status, date) VALUES (?, ?, ?, ?, ?)',
+        [
+          user.id,
+          `PEDIDO #${orderId} REALIZADO`,
+          notificationDescription,
+          'preparing',
+          orderData.date
+        ]
+      );
+
       try {
-        const response = await fetch('http://192.168.1.10:3000/orders', {
+        await fetch('http://192.168.1.10:3000/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(orderData),
+          body: JSON.stringify({ ...orderData, id: orderId }),
         });
-        
-        if (!response.ok) throw new Error("Erro na API");
-        console.log("Pedido sincronizado com o servidor com sucesso!");
       } catch (apiError) {
-        console.log("Aviso: Backend offline. O pedido foi salvo localmente no SQLite.");
+        console.log("Aviso: Backend offline. Notificação e pedido salvos localmente.");
       }
 
-      // 3. FINALIZAÇÃO NO FRONTEND
       clearCart();
       router.push('/payment-success');
 
@@ -58,30 +72,33 @@ export default function Checkout() {
       Alert.alert("Erro", "Não foi possível processar o pedido localmente.");
     }
   };
-
   return (
     <View style={styles.container}>
       <Header title="Finalizar Pedido" showBack />
-      
+
       <ScrollView style={styles.content}>
         <View style={styles.summaryCard}>
           <Text style={styles.sectionTitle}>Resumo do Pedido</Text>
-          {cart.map((item) => (
-            <View key={item.id} style={styles.itemRow}>
+          {cart && cart.map((item) => (
+            <View key={`${item.id}-${item.size}`} style={styles.itemRow}>
               <Text style={styles.itemText}>{item.quantity}x {item.name}</Text>
               <Text style={styles.itemPrice}>R$ {(item.price * item.quantity).toFixed(2)}</Text>
             </View>
           ))}
-          
+
           <View style={styles.divider} />
-          
+
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalValue}>R$ {totalValue.toFixed(2)}</Text>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.finishButton} onPress={handleFinishOrder}>
+        <TouchableOpacity
+          style={styles.finishButton}
+          onPress={handleFinishOrder}
+          disabled={!cart || cart.length === 0}
+        >
           <Text style={styles.finishButtonText}>Confirmar e Pagar</Text>
         </TouchableOpacity>
       </ScrollView>

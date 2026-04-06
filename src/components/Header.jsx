@@ -1,27 +1,38 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Bell } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Bell, ArrowLeft } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 
-/**
- * Componente de Cabeçalho Superior (Versão Clean)
- */
-export function Header() {
+export function Header({ title, showBack = false }) {
+  const router = useRouter();
+
   return (
     <View style={styles.header}>
       <View style={styles.topRow}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.subtitle}>Bem vindos a</Text>
-          <Text style={styles.title}>Velvet Slice</Text>
+        <View style={styles.leftSection}>
+          {showBack && (
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => router.back()}
+            >
+              <ArrowLeft size={24} color={Colors.background || '#FFF'} />
+            </TouchableOpacity>
+          )}
+          
+          <View style={styles.titleContainer}>
+            <Text style={styles.subtitle}>{showBack ? '' : 'Bem vindos a'}</Text>
+            <Text style={styles.title}>{title || 'Velvet Slice'}</Text>
+          </View>
         </View>
         
         <TouchableOpacity 
           style={styles.bellButton}
-          onPress={() => Alert.alert('Notificações', 'Você não tem novas mensagens.')}
+          onPress={() => router.push('/notifications')}
         >
-          <Bell size={18} color={Colors.background || '#FFF'} />
+          <Bell size={20} color={Colors.background || '#FFF'} />
         </TouchableOpacity>
       </View>
     </View>
@@ -47,22 +58,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   titleContainer: {
-    gap: 2,
+    gap: 0,
   },
   subtitle: {
     fontFamily: Fonts.newsreader,
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.secondary || '#ccc',
+    marginBottom: -4,
   },
   title: {
     fontFamily: Fonts.newsreader,
-    fontSize: 28,
+    fontSize: 26,
     color: Colors.background || '#FFF',
   },
   bellButton: {
-    backgroundColor: Colors.secondary || '#ccc',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     padding: 10,
-    borderRadius: 10,
+    borderRadius: 12,
   },
+  backButton: {
+    padding: 4,
+  }
 });
