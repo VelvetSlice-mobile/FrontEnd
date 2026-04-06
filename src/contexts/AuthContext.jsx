@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const userData = await authService.login(email, password);
-      setUser(userData); 
+      setUser(userData);
       return { success: true };
     } catch (error) {
       return { success: false, message: error.message };
@@ -31,13 +31,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        isAuthenticated: !!user, 
-        login, 
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        login,
         register,
-        logout 
+        logout
       }}
     >
       {children}
