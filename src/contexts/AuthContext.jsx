@@ -4,9 +4,8 @@ import { authService } from '../../src/services/api';
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
-  // Use esta linha para teste (como você pediu):
+
   const [user, setUser] = useState({ id: 1, name: 'Miguel Dev', email: 'teste@teste.com', phone: '(11) 99999-9999' });
-  // const [user, setUser] = useState(null); 
 
   const login = async (email, password) => {
     try {
