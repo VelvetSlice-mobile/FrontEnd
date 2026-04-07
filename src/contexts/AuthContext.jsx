@@ -4,12 +4,14 @@ import { authService } from '../../src/services/api';
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  // USEI PARA FAZER O TESTE DOS PEDIDOS, COLOQUE A LINHA DE CIMA COMO COMENTÁRIO E DEIXE ESSA ATIVA PARA TESTAR: const [user, setUser] = useState({ id: 1, name: 'Miguel Dev', email: 'teste@teste.com' });
+  // Use esta linha para teste (como você pediu):
+  const [user, setUser] = useState({ id: 1, name: 'Miguel Dev', email: 'teste@teste.com', phone: '(11) 99999-9999' });
+  // const [user, setUser] = useState(null); 
+
   const login = async (email, password) => {
     try {
       const userData = await authService.login(email, password);
-      setUser(userData); 
+      setUser(userData);
       return { success: true };
     } catch (error) {
       return { success: false, message: error.message };
@@ -30,14 +32,26 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+
+  const updateUserData = async (newData) => {
+    try {
+      setUser(prev => ({ ...prev, ...newData }));
+      return { success: true };
+    } catch (error) {
+      console.error("Erro ao atualizar dados:", error);
+      return { success: false, message: "Erro ao salvar alterações localmente." };
+    }
+  };
+
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        isAuthenticated: !!user, 
-        login, 
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        login,
         register,
-        logout 
+        logout,
+        updateUserData
       }}
     >
       {children}
