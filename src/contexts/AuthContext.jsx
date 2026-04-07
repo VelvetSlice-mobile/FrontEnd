@@ -32,10 +32,9 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // --- ADICIONE ESTA FUNÇÃO AQUI DENTRO ---
+
   const updateUserData = async (newData) => {
     try {
-      // Atualiza o estado 'user' mantendo o que já tinha e trocando apenas o novo
       setUser(prev => ({ ...prev, ...newData }));
       return { success: true };
     } catch (error) {
@@ -52,7 +51,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        updateUserData // --- NÃO ESQUEÇA DE EXPORTAR AQUI ---
+        updateUserData
       }}
     >
       {children}
