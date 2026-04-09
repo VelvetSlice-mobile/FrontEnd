@@ -1,34 +1,78 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { FormInput } from '../src/components/FormInput';
 import { Button } from '../src/components/Button';
+import { useAuth } from '../src/contexts/AuthContext';
+import { useNav } from '../src/contexts/NavContext';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { register } = useAuth();
+  const { setShowNav } = useNav();
+  const lastOffset = useRef(0);
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
-    if (!name || !email || !password || !confirmPassword) {
+  useFocusEffect(
+    useCallback(() => {
+      lastOffset.current = 0;
+      setShowNav(false);
+
+      return () => {
+        setShowNav(true);
+      };
+    }, [setShowNav]),
+  );
+
+  const handleScroll = (event) => {
+    const currentOffset = event.nativeEvent.contentOffset.y;
+    const delta = currentOffset - lastOffset.current;
+
+    if (currentOffset <= 10 || delta < 0) {
+      setShowNav(false);
+    } else if (delta > 0) {
+      setShowNav(true);
+    }
+
+    lastOffset.current = currentOffset;
+  };
+
+  const handleRegister = async () => {
+    if (!name || !phone || !email || !password || !confirmPassword) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
-    
+
     if (password !== confirmPassword) {
       Alert.alert('Erro', 'As senhas não coincidem');
       return;
     }
 
-    Alert.alert('Sucesso', 'Conta criada com sucesso!', [
-      { text: 'OK', onPress: () => router.replace('/login') },
-    ]);
+    setLoading(true);
+    try {
+      const result = await register({ name, email, password, phone });
+      if (result.success) {
+        Alert.alert('Sucesso', 'Conta criada com sucesso!', [
+          { text: 'OK', onPress: () => router.replace('/login') },
+        ]);
+      } else {
+        Alert.alert('Erro', result.message || 'Erro ao registrar');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Erro inesperado ao registrar');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,6 +83,8 @@ export default function RegisterPage() {
       <ScrollView 
         contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         <View style={styles.card}>
           <Text style={styles.title}>Velvet Slice</Text>
@@ -51,6 +97,14 @@ export default function RegisterPage() {
             placeholder="Digite seu nome completo"
             value={name}
             onChangeText={setName}
+          />
+
+          <FormInput
+            label="Telefone"
+            placeholder="Digite seu telefone"
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
           />
 
           <FormInput
@@ -87,8 +141,8 @@ export default function RegisterPage() {
             </Text>
           </TouchableOpacity>
 
-          <Button fullWidth onPress={handleRegister}>
-            Cadastrar
+          <Button fullWidth onPress={handleRegister} disabled={loading}>
+            {loading ? 'Cadastrando...' : 'Cadastrar'}
           </Button>
 
           <View style={styles.divider} />
@@ -112,7 +166,8 @@ const styles = StyleSheet.create({
   scrollContent: { 
     flexGrow: 1, 
     justifyContent: 'center', 
-    padding: 24 
+    padding: 24,
+    paddingBottom: 140,
   },
   card: {
     backgroundColor: Colors.background,

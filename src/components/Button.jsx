@@ -1,17 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
-
-/**
- * Componente de Botão Customizado
- * @param {Object} props
- * @param {React.ReactNode} props.children - Conteúdo do botão (texto ou ícone)
- * @param {boolean} props.fullWidth - Se o botão deve ocupar 100% da largura
- * @param {'solid' | 'outline'} props.variant - Estilo visual do botão
- * @param {Object} props.style - Estilos adicionais passados via prop
- */
 export function Button({ 
   children, 
   fullWidth, 
