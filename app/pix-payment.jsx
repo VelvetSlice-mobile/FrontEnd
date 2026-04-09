@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
 import { QrCode } from "lucide-react-native";
 import { Colors } from "../src/constants/Colors";
 import { Fonts } from "../src/constants/Fonts";
@@ -8,7 +7,6 @@ import { useNav } from "../src/contexts/NavContext";
 import { Header } from "../src/components/Header";
 
 export default function PixPaymentPage() {
-  const router = useRouter();
   const [timeLeft, setTimeLeft] = useState(3599);
 
   const { setShowNav } = useNav();

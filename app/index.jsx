@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,20 +10,17 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Cake, CakeSlice, Cherry, Candy } from "lucide-react-native";
-import { useNav } from "../src/contexts/NavContext";
+import { useNavScrollBehavior } from "../src/contexts/NavContext";
 
-// Importação de dados e constantes
 import { products } from "../src/data/products";
 import { Colors } from "../src/constants/Colors";
 import { Fonts } from "../src/constants/Fonts";
 
-// Importação de componentes
 import { Header } from "../src/components/Header";
 import { ProductCard } from "../src/components/ProductCard";
 
 const { width } = Dimensions.get("window");
 
-// Ajuste na estrutura dos ícones
 const getCategoryIcon = (category) => {
   const iconProps = { size: 28, color: Colors.primary };
   switch (category) {
@@ -43,27 +40,7 @@ const getCategoryIcon = (category) => {
 export default function HomePage() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const { setShowNav } = useNav();
-  const lastOffset = useRef(0);
-
-  // Navbar sumindo no topo e aparecendo no scroll
-  const handleScroll = (event) => {
-    const currentOffset = event.nativeEvent.contentOffset.y;
-    const isScrollingDown = currentOffset > lastOffset.current;
-
-    if (currentOffset < 50) {
-      setShowNav(false);
-    }
-    else if (isScrollingDown) {
-      setShowNav(true);
-    }
-    else {
-      setShowNav(false);
-    }
-
-    lastOffset.current = currentOffset;
-
-  };
+  const handleScroll = useNavScrollBehavior();
 
   const categories = ["Bolo", "Choco", "Frutas", "Doces"];
 
@@ -83,7 +60,6 @@ export default function HomePage() {
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {/* Carrossel de Ofertas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Ofertas</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -122,7 +98,6 @@ export default function HomePage() {
           </ScrollView>
         </View>
 
-        {/* Categorias */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Categorias</Text>
           <View style={styles.categoriesRow}>
@@ -144,7 +119,6 @@ export default function HomePage() {
           </View>
         </View>
 
-        {/* Grade de Produtos */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Só os melhores</Text>
           <View style={styles.gridContainer}>

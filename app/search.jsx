@@ -1,33 +1,16 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import { View, Text, TextInput, ScrollView, StyleSheet } from "react-native";
 import { Search as SearchIcon } from "lucide-react-native";
 import { products } from "../src/data/products";
 import { Colors } from "../src/constants/Colors";
 import { Fonts } from "../src/constants/Fonts";
-import { useNav } from "../src/contexts/NavContext";
+import { useNavScrollBehavior } from "../src/contexts/NavContext";
 import { Header } from "../src/components/Header";
 import { ProductCard } from "../src/components/ProductCard";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
-
-   const { setShowNav } = useNav();
-    const lastOffset = useRef(0);
-  
-    const handleScroll = (event) => {
-      const currentOffset = event.nativeEvent.contentOffset.y;
-      const dif = currentOffset - lastOffset.current;
-  
-      if (currentOffset <= 10) {
-        setShowNav(true);
-      } else if (dif > 0) {
-        setShowNav(false);
-      } else if (dif < 0) {
-        setShowNav(true);
-      }
-  
-      lastOffset.current = currentOffset;
-    };
+  const handleScroll = useNavScrollBehavior();
 
   const filtered = useMemo(() => {
     if (!query.trim()) return products;
