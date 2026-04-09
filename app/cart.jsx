@@ -17,8 +17,7 @@ import { Fonts } from "../src/constants/Fonts";
 import { useNav } from "../src/contexts/NavContext";
 import { Header } from "../src/components/Header";
 import { Button } from "../src/components/Button";
-import { useAuth } from "../src/contexts/AuthContext"; // Importe o Auth
-import { initDatabase } from "../src/services/database"; // Importe seu banco
+import { useAuth } from "../src/contexts/AuthContext";
 
 export default function CartPage() {
   const router = useRouter();
@@ -47,37 +46,14 @@ const handleScroll = (event) => {
   };
 
 
-  // Lógica de Finalização (Onde o Banco e Auth entram)
   const handleCheckout = async () => {
-    // 1. Validação de segurança (Opcional: descomente para exigir login)
-    /* if (!user) {
-      Alert.alert("Atenção", "Faça login para finalizar sua compra.");
+    if (!user) {
+      Alert.alert("Atenção", "Faça login ou crie sua conta.");
       router.push("/login");
       return;
-    } */
-
-    try {
-      // 2. Simulação de Persistência no SQLite
-      // Aqui você demonstra que os dados estão prontos para o banco
-      const orderSummary = {
-        userId: user?.id || "convidado",
-        totalValue: total,
-        itemsCount: items.length,
-        timestamp: new Date().toISOString(),
-      };
-
-      console.log("SQLITE: Preparando para salvar pedido...", orderSummary);
-      
-      // Chamada da inicialização do banco (Garante que a tabela existe)
-      initDatabase(); 
-
-      // 3. Navegação para a próxima etapa
-      router.push("/checkout");
-
-    } catch (error) {
-      console.error("Erro ao processar pedido:", error);
-      Alert.alert("Erro", "Falha ao processar o carrinho no banco local.");
     }
+
+    router.push("/checkout");
   };
 
   const handleApplyCoupon = () => {
@@ -210,7 +186,7 @@ const handleScroll = (event) => {
                   </Text>
                 </View>
 
-                <Button onPress={() => router.push("/checkout")}>
+                <Button onPress={handleCheckout}>
                   Ir para pagamento
                 </Button>
               </View>

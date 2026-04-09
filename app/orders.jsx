@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Package, Truck, CheckCircle, ClipboardCopy } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { Navbar } from '../src/components/Navbar';
 import { Header } from '../src/components/Header';
 import { Button } from '../src/components/Button';
 import { database } from '../src/services/database';
+import { orderService } from '../src/services/api';
 import { useAuth } from '../src/contexts/AuthContext';
 
 const STATUS_LABELS = {
@@ -20,26 +22,85 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState('preparing');
 
-  useEffect(() => {
-    if (user) {
-      try {
-        const result = database.getAllSync(
-          'SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC',
-          [user.id]
-        );
+  const loadOrders = useCallback(async () => {
+    if (!user) return;
 
-        const formattedOrders = result.map(order => ({
-          ...order,
-          items: JSON.parse(order.items),
-          status: order.status || 'preparing'
-        }));
+    const userId = user.id ?? user.id_cliente;
+    if (!userId) return;
 
-        setOrders(formattedOrders);
-      } catch (error) {
-        console.error("Erro ao carregar pedidos do SQLite:", error);
+    try {
+      const normalizeStatus = (status) => {
+        const raw = (status || '').toString().trim().toLowerCase();
+        if (!raw || raw === 'pending' || raw.includes('pend')) return 'preparing';
+        if (raw.includes('pago') || raw.includes('paid') || raw.includes('approved')) return 'preparing';
+        if (raw.includes('rota') || raw.includes('transit')) return 'in_transit';
+        if (raw.includes('entreg') || raw.includes('delivered')) return 'delivered';
+        return 'preparing';
+      };
+
+      const localResult = database.getAllSync(
+        'SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC',
+        [userId]
+      );
+
+      const localOrders = localResult.map(order => ({
+        ...order,
+        items: order.items ? JSON.parse(order.items) : [],
+        status: normalizeStatus(order.status),
+      }));
+
+      const backendOrders = await orderService.getByClientId(userId);
+
+      if (Array.isArray(backendOrders) && backendOrders.length > 0) {
+        for (const backendOrder of backendOrders) {
+          const mappedStatus = normalizeStatus(backendOrder.status_pedido);
+          database.runSync(
+            'UPDATE orders SET status = ? WHERE id = ? AND user_id = ?',
+            [mappedStatus, backendOrder.id_pedido, userId]
+          );
+        }
+
+        const localMap = new Map(localOrders.map(order => [order.id, order]));
+        const merged = [...localOrders];
+
+        for (const backendOrder of backendOrders) {
+          const id = backendOrder.id_pedido;
+          const mappedStatus = normalizeStatus(backendOrder.status_pedido);
+
+          if (localMap.has(id)) {
+            const current = localMap.get(id);
+            current.status = mappedStatus;
+          } else {
+            merged.push({
+              id,
+              user_id: userId,
+              total: backendOrder.valor_total,
+              date: backendOrder.data_pedido,
+              status: mappedStatus,
+              items: [],
+            });
+          }
+        }
+
+        merged.sort((a, b) => (b.id || 0) - (a.id || 0));
+        setOrders(merged);
+      } else {
+        setOrders(localOrders);
       }
+    } catch (error) {
+      console.error("Erro ao carregar pedidos:", error);
     }
   }, [user]);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [loadOrders])
+  );
 
   const filteredOrders = orders.filter((o) => o.status === activeTab);
 

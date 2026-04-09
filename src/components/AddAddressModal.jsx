@@ -12,8 +12,9 @@ import { Fonts } from "../constants/Fonts";
 import { addressService } from "../services/api";
 import { Button } from "./Button";
 
-export function AddAddressModal({ onClose, onSave, addressData }) {
-  // Estados para os campos do formulário
+export function AddAddressModal({ onClose, onSave, addressData, user }) {
+  const userId = user?.id ?? user?.id_cliente;
+
   const [placeName, setPlaceName] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
@@ -22,7 +23,6 @@ export function AddAddressModal({ onClose, onSave, addressData }) {
   const [complement, setComplement] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Efeito para carregar os dados quando for edição
   useEffect(() => {
     if (addressData) {
       setPlaceName(addressData.nome_endereco || "");
@@ -32,7 +32,6 @@ export function AddAddressModal({ onClose, onSave, addressData }) {
       setUf(addressData.estado || "");
       setComplement(addressData.complemento || "");
     } else {
-      // Limpa os campos se não houver addressData (novo endereço)
       setPlaceName("");
       setStreet("");
       setNumber("");
@@ -48,6 +47,11 @@ export function AddAddressModal({ onClose, onSave, addressData }) {
       return;
     }
 
+    if (!userId) {
+      Alert.alert("Erro", "Usuário não identificado para vincular o endereço.");
+      return;
+    }
+
     const dadosEndereco = {
       nome_endereco: placeName,
       logradouro: street,
@@ -55,7 +59,7 @@ export function AddAddressModal({ onClose, onSave, addressData }) {
       CEP: cep,
       estado: uf,
       complemento: complement,
-      fk_Cliente_id_cliente: 1, // ID fixo conforme seu código original
+      fk_Cliente_id_cliente: userId,
     };
 
     try {
@@ -63,22 +67,21 @@ export function AddAddressModal({ onClose, onSave, addressData }) {
       let result;
 
       if (addressData?.id_endereco) {
-        // Lógica de Atualizar (PUT)
         result = await addressService.update(
           addressData.id_endereco,
-          dadosEndereco
+          dadosEndereco,
         );
         Alert.alert("Sucesso", "Endereço atualizado!");
       } else {
-        // Lógica de Criar (POST)
-        result = await addressService.create(dadosEndereco);
+        const novoEndereco = await addressService.create(dadosEndereco);
+
+        result = novoEndereco;
         Alert.alert("Sucesso", "Endereço salvo!");
       }
 
       if (onSave) onSave(result);
       if (onClose) onClose();
     } catch (error) {
-      console.error(error);
       Alert.alert("Erro", "Não foi possível salvar os dados.");
     } finally {
       setIsSaving(false);
@@ -237,11 +240,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 20,
   },
-  cancelButton: { 
-    flex: 1, 
-    backgroundColor: "transparent", 
+  cancelButton: {
+    flex: 1,
+    backgroundColor: "transparent",
     elevation: 0,
     borderWidth: 1,
-    borderColor: Colors.primary
+    borderColor: Colors.primary,
   },
 });
