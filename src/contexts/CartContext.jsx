@@ -37,12 +37,10 @@ export function CartProvider({ children }) {
 
   const updateItem = (oldItem, updatedItem) => {
   setItems((curr) => {
-    // remove o item antigo
     const filtered = curr.filter(
       (item) => !(item.id === oldItem.id && item.size === oldItem.size)
     );
 
-    // adiciona o atualizado
     return [...filtered, { ...oldItem, ...updatedItem }];
   });
 };

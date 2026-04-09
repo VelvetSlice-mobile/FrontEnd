@@ -1,9 +1,4 @@
 import { IMAGES } from '../constants/Images';
-
-/**
- * Lista de produtos da Velvet Slice
- * Cada produto contém: id, name, description, price, image, category e rating.
- */
 export const products = [
   {
     id: '1',

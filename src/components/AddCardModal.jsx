@@ -19,7 +19,7 @@ export function AddCardModal({ onClose, onSave, cardData }) {
   const [cardNumber, setCardNumber] = useState("");
   const [cvv, setCvv] = useState("");
   const [expiry, setExpiry] = useState("");
-  const [cardType, setCardType] = useState("credit"); // crédito ou débito
+  const [cardType, setCardType] = useState("credit");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -31,7 +31,6 @@ export function AddCardModal({ onClose, onSave, cardData }) {
       setExpiry(cardData.expiry || "");
       setCardType(cardData.type || "credito");
     } else {
-      // resetar campos para um novo cartão
       setHolderName("");
       setCpf("");
       setCardNumber("");
@@ -73,13 +72,13 @@ export function AddCardModal({ onClose, onSave, cardData }) {
       expiry,
       type: cardType,
     };
-    // ... dentro de handleAdd
+
     setTimeout(() => {
       if (onSave) {
         onSave({
           number: cardNumber,
-          selectedType: cardType, // Corrigido: era 'selectedType: selectedType' (que não existia)
-          holder: holderName, // Corrigido: era 'name: cardName'
+          selectedType: cardType,
+          holder: holderName,
         });
       }
       Alert.alert(

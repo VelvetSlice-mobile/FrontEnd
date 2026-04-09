@@ -4,10 +4,6 @@ import { Bell } from 'lucide-react-native';
 
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
-
-/**
- * Componente de Cabeçalho Superior (Versão Clean)
- */
 export function Header() {
   return (
     <View style={styles.header}>
