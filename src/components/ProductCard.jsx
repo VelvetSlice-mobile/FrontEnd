@@ -8,12 +8,6 @@ import { Fonts } from '../constants/Fonts';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 55) / 2;
-
-/**
- * Componente de Card de Produto para Listagens
- * @param {Object} props
- * @param {Object} props.product - Objeto contendo os dados do produto
- */
 export function ProductCard({ product }) {
   const router = useRouter();
 

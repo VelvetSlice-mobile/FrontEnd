@@ -2,20 +2,17 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 
-// Importação de constantes e componentes
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { FormInput } from '../src/components/FormInput';
 import { Button } from '../src/components/Button';
 
-// Importação do contexto de autenticação
 import { useAuth } from '../src/contexts/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   
-  // Estados em JavaScript puro
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,9 +25,7 @@ export default function LoginPage() {
     
     setLoading(true);
     try {
-      // Chama a função de login do seu AuthContext
       await login(email, password);
-      // replace('/') evita que o usuário volte para o login ao apertar o botão "voltar"
       router.replace('/');
     } catch (error) {
       Alert.alert('Erro', 'Falha na autenticação. Verifique suas credenciais.');
@@ -68,7 +63,7 @@ export default function LoginPage() {
             label="Senha"
             placeholder="••••••••••••"
             icon="password"
-            secureTextEntry={true} // Garante que a senha fique oculta
+            secureTextEntry={true}
             value={password}
             onChangeText={setPassword}
           />

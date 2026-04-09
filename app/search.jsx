@@ -1,28 +1,36 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet } from 'react-native';
-import { Search as SearchIcon } from 'lucide-react-native';
-import { products } from '../src/data/products';
-import { Colors } from '../src/constants/Colors';
-import { Fonts } from '../src/constants/Fonts';
-import { Navbar } from '../src/components/Navbar';
-import { Header } from '../src/components/Header';
-import { ProductCard } from '../src/components/ProductCard';
+import React, { useState, useMemo } from "react";
+import { View, Text, TextInput, ScrollView, StyleSheet } from "react-native";
+import { Search as SearchIcon } from "lucide-react-native";
+import { products } from "../src/data/products";
+import { Colors } from "../src/constants/Colors";
+import { Fonts } from "../src/constants/Fonts";
+import { useNavScrollBehavior } from "../src/contexts/NavContext";
+import { Header } from "../src/components/Header";
+import { ProductCard } from "../src/components/ProductCard";
 
 export default function SearchPage() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
+  const handleScroll = useNavScrollBehavior();
 
   const filtered = useMemo(() => {
     if (!query.trim()) return products;
     const q = query.toLowerCase();
     return products.filter(
-      (p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q),
     );
   }, [query]);
 
   return (
     <View style={styles.container}>
       <Header />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         <View style={styles.content}>
           <View style={styles.searchInputRow}>
             <SearchIcon size={16} color={Colors.secondary} />
@@ -49,7 +57,7 @@ export default function SearchPage() {
           )}
         </View>
       </ScrollView>
-      <Navbar />
+    
     </View>
   );
 }
@@ -58,8 +66,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { paddingHorizontal: 22, marginTop: 12 },
   searchInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.background,
     borderRadius: 4,
     borderWidth: 1,
@@ -81,12 +89,16 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     marginBottom: 10,
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
   emptyText: {
     fontFamily: Fonts.poppins,
     fontSize: 14,
     color: Colors.secondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 40,
   },
 });

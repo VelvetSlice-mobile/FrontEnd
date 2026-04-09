@@ -1,64 +1,77 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Cake, CakeSlice, Cherry, Candy } from 'lucide-react-native';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Cake, CakeSlice, Cherry, Candy } from "lucide-react-native";
+import { useNavScrollBehavior } from "../src/contexts/NavContext";
 
-// Importação de dados e constantes
-import { products } from '../src/data/products';
-import { Colors } from '../src/constants/Colors';
-import { Fonts } from '../src/constants/Fonts';
+import { products } from "../src/data/products";
+import { Colors } from "../src/constants/Colors";
+import { Fonts } from "../src/constants/Fonts";
 
-// Importação de componentes
-import { Navbar } from '../src/components/Navbar';
-import { Header } from '../src/components/Header';
-import { ProductCard } from '../src/components/ProductCard';
+import { Header } from "../src/components/Header";
+import { ProductCard } from "../src/components/ProductCard";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
-// Ajuste na estrutura dos ícones para JavaScript puro
 const getCategoryIcon = (category) => {
   const iconProps = { size: 28, color: Colors.primary };
   switch (category) {
-    case 'Bolo': return <Cake {...iconProps} />;
-    case 'Choco': return <CakeSlice {...iconProps} />;
-    case 'Frutas': return <Cherry {...iconProps} />;
-    case 'Doces': return <Candy {...iconProps} />;
-    default: return null;
+    case "Bolo":
+      return <Cake {...iconProps} />;
+    case "Choco":
+      return <CakeSlice {...iconProps} />;
+    case "Frutas":
+      return <Cherry {...iconProps} />;
+    case "Doces":
+      return <Candy {...iconProps} />;
+    default:
+      return null;
   }
 };
 
 export default function HomePage() {
   const router = useRouter();
-  // Estado sem tipagem estática
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const handleScroll = useNavScrollBehavior();
 
-  const categories = ['Bolo', 'Choco', 'Frutas', 'Doces'];
+  const categories = ["Bolo", "Choco", "Frutas", "Doces"];
 
   const filteredProducts = selectedCategory
-    ? products.filter((p) => 
-        p.category.toLowerCase().includes(selectedCategory.toLowerCase())
+    ? products.filter((p) =>
+        p.category.toLowerCase().includes(selectedCategory.toLowerCase()),
       )
     : products;
 
   return (
     <View style={styles.mainContainer}>
       <Header />
-      
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {/* Carrossel de Ofertas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Ofertas</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <TouchableOpacity
               style={styles.offerCard}
-              onPress={() => router.push('/product/1')}
+              onPress={() => router.push("/product/1")}
               activeOpacity={0.8}
             >
               <View style={styles.offerContent}>
-                <Text style={styles.offerSubtitle}>Especiais{'\n'}Chocolatudos</Text>
+                <Text style={styles.offerSubtitle}>
+                  Especiais{"\n"}Chocolatudos
+                </Text>
                 <Text style={styles.offerDiscount}>OFF 60%</Text>
                 <View style={styles.offerButton}>
                   <Text style={styles.offerButtonText}>Ver</Text>
@@ -69,11 +82,13 @@ export default function HomePage() {
 
             <TouchableOpacity
               style={styles.offerCard}
-              onPress={() => router.push('/product/2')}
+              onPress={() => router.push("/product/2")}
               activeOpacity={0.8}
             >
               <View style={styles.offerContent}>
-                <Text style={styles.offerSubtitle}>Especiais{'\n'}Frutudos</Text>
+                <Text style={styles.offerSubtitle}>
+                  Especiais{"\n"}Frutudos
+                </Text>
                 <Text style={styles.offerDiscount}>OFF 60%</Text>
                 <View style={styles.offerButton}>
                   <Text style={styles.offerButtonText}>Ver</Text>
@@ -83,7 +98,6 @@ export default function HomePage() {
           </ScrollView>
         </View>
 
-        {/* Categorias */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Categorias</Text>
           <View style={styles.categoriesRow}>
@@ -94,7 +108,9 @@ export default function HomePage() {
                   styles.categoryButton,
                   selectedCategory === cat && styles.categoryActive,
                 ]}
-                onPress={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+                onPress={() =>
+                  setSelectedCategory(selectedCategory === cat ? null : cat)
+                }
               >
                 {getCategoryIcon(cat)}
                 <Text style={styles.categoryText}>{cat}</Text>
@@ -103,7 +119,6 @@ export default function HomePage() {
           </View>
         </View>
 
-        {/* Grade de Produtos */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Só os melhores</Text>
           <View style={styles.gridContainer}>
@@ -113,8 +128,6 @@ export default function HomePage() {
           </View>
         </View>
       </ScrollView>
-      
-      <Navbar />
     </View>
   );
 }
@@ -125,7 +138,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: Fonts.newsreader,
     fontSize: 16,
-    color: Colors.black || '#000',
+    color: Colors.black,
     marginBottom: 10,
   },
   offerCard: {
@@ -136,42 +149,65 @@ const styles = StyleSheet.create({
     marginRight: 15,
     borderWidth: 1,
     borderColor: Colors.primary,
-    flexDirection: 'row',
-    overflow: 'hidden',
+    flexDirection: "row",
+    overflow: "hidden",
   },
-  offerContent: { padding: 15, flex: 1, justifyContent: 'center', gap: 4 },
-  offerSubtitle: { fontFamily: Fonts.newsreader, fontSize: 16, color: Colors.primary },
-  offerDiscount: { fontFamily: Fonts.newsreader, fontSize: 16, color: Colors.accent },
+  offerContent: { padding: 15, flex: 1, justifyContent: "center", gap: 4 },
+  offerSubtitle: {
+    fontFamily: Fonts.newsreader,
+    fontSize: 16,
+    color: Colors.primary,
+  },
+  offerDiscount: {
+    fontFamily: Fonts.newsreader,
+    fontSize: 16,
+    color: Colors.accent,
+  },
   offerButton: {
     backgroundColor: Colors.accent,
     paddingVertical: 6,
     paddingHorizontal: 16,
     borderRadius: 100,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginTop: 4,
   },
-  offerButtonText: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.background },
+  offerButtonText: {
+    fontFamily: Fonts.newsreaderBold,
+    fontSize: 16,
+    color: Colors.background,
+  },
   offerImage: {
     width: 120,
-    height: '120%',
-    position: 'absolute',
+    height: "120%",
+    position: "absolute",
     right: -20,
     top: -10,
     borderRadius: 100,
   },
-  categoriesRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  categoriesRow: { flexDirection: "row", justifyContent: "space-between" },
   categoryButton: {
     borderRadius: 100,
     borderWidth: 1,
     borderColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 10,
     paddingHorizontal: 12,
     gap: 6,
     width: (width - 80) / 4,
   },
-  categoryActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
-  categoryText: { fontFamily: Fonts.newsreader, fontSize: 10, color: Colors.primary },
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  categoryActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  categoryText: {
+    fontFamily: Fonts.newsreader,
+    fontSize: 10,
+    color: Colors.primary,
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
 });
