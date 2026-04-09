@@ -4,14 +4,6 @@ import { Eye, EyeOff, Mail } from 'lucide-react-native';
 
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
-
-/**
- * Componente de Input de Formulário customizado
- * @param {Object} props
- * @param {string} props.label - Rótulo do campo
- * @param {'mail' | 'password'} props.icon - Ícone a ser exibido
- * @param {boolean} props.secureTextEntry - Se o texto deve ser ocultado
- */
 export function FormInput({ label, icon, secureTextEntry, style, ...rest }) {
   const [showPassword, setShowPassword] = useState(false);
   

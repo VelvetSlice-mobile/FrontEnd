@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Star } from 'lucide-react-native';
-
 import { products } from '../../src/data/products';
 import { useCart } from '../../src/contexts/CartContext';
 import { Colors } from '../../src/constants/Colors';

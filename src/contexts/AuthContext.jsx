@@ -3,14 +3,25 @@ import { authService } from '../../src/services/api';
 
 const AuthContext = createContext(undefined);
 
-export const AuthProvider = ({ children }) => {
+const normalizeUser = (userData) => {
+  if (!userData) return null;
 
-  const [user, setUser] = useState({ id: 1, name: 'Miguel Dev', email: 'teste@teste.com', phone: '(11) 99999-9999' });
+  return {
+    ...userData,
+    id: userData.id ?? userData.id_cliente,
+    id_cliente: userData.id_cliente ?? userData.id,
+    name: userData.name ?? userData.nome,
+    nome: userData.nome ?? userData.name,
+  };
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(normalizeUser({ id: 1, name: 'Usuário Teste', email: 'teste@email.com' }));
 
   const login = async (email, password) => {
     try {
       const userData = await authService.login(email, password);
-      setUser(userData);
+      setUser(normalizeUser(userData)); 
       return { success: true };
     } catch (error) {
       return { success: false, message: error.message };
@@ -20,7 +31,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const result = await authService.register(userData);
-      setUser(result);
+      setUser(normalizeUser(result));
       return { success: true };
     } catch (error) {
       return { success: false, message: error.message || "Erro ao registrar" };
@@ -31,26 +42,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-
-  const updateUserData = async (newData) => {
-    try {
-      setUser(prev => ({ ...prev, ...newData }));
-      return { success: true };
-    } catch (error) {
-      console.error("Erro ao atualizar dados:", error);
-      return { success: false, message: "Erro ao salvar alterações localmente." };
-    }
-  };
-
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        login,
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        isAuthenticated: !!user, 
+        login, 
         register,
-        logout,
-        updateUserData
+        logout 
       }}
     >
       {children}
