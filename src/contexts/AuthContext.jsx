@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const userData = await authService.login(email, password);
-      setUser(normalizeUser(userData)); 
+      setUser(normalizeUser(userData));  
       return { success: true };
     } catch (error) {
       return { success: false, message: error.message };
@@ -43,13 +43,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        isAuthenticated: !!user, 
-        login, 
+    <AuthContext.Provider  
+      value={{  
+        user,  
+        isAuthenticated: !!user,  
+        login,  
         register,
+<<<<<<< HEAD
         logout 
+=======
+        logout 
+>>>>>>> parent of db191ac (implementa fluxos de edição de perfil com validações)
       }}
     >
       {children}
