@@ -1,19 +1,26 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Colors } from '../../src/constants/Colors';
-import { Fonts } from '../../src/constants/Fonts';
-import { Navbar } from '../../src/components/Navbar';
-import { FormInput } from '../../src/components/FormInput';
-import { Button } from '../../src/components/Button';
-import { useAuth } from '../../src/contexts/AuthContext'; // Importe necessário
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text
+} from "react-native";
+import { Button } from "../../src/components/Button";
+import { FormInput } from "../../src/components/FormInput";
+import { Navbar } from "../../src/components/Navbar";
+import { Colors } from "../../src/constants/Colors";
+import { Fonts } from "../../src/constants/Fonts";
+import { useAuth } from "../../src/contexts/AuthContext"; // Importe necessário
 
 export default function EditNamePage() {
   const router = useRouter();
   const { user, updateUserData } = useAuth(); // Pega a função do contexto
 
   // Iniciamos o state com o nome atual do usuário para facilitar a edição
-  const [name, setName] = useState(user?.name || '');
+  const [name, setName] = useState(user?.name || "");
 
   const handleSave = async () => {
     // VALIDAÇÃO
@@ -37,12 +44,21 @@ export default function EditNamePage() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>Editar nome de usuário</Text>
 
         <Text style={styles.description}>
-          Altere seu nome de usuário para manter suas informações atualizadas na plataforma.
+          Altere seu nome de usuário para manter suas informações atualizadas na
+          plataforma.
         </Text>
 
         <FormInput
@@ -55,36 +71,36 @@ export default function EditNamePage() {
         <Button fullWidth onPress={handleSave} style={styles.buttonMargin}>
           Salvar Alterações
         </Button>
-      </View>
+      </ScrollView>
 
       <Navbar />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background || '#FFF6E9'
+    backgroundColor: Colors.background || "#FFF6E9",
   },
   content: {
     paddingHorizontal: 22,
     paddingTop: 60,
-    gap: 16 // Aumentei um pouco o gap para respirar melhor
+    gap: 16, // Aumentei um pouco o gap para respirar melhor
   },
   title: {
-    fontFamily: Fonts.newsreader || 'System',
+    fontFamily: Fonts.newsreader || "System",
     fontSize: 24,
-    color: Colors.primary || '#4F2C1D'
+    color: Colors.primary || "#4F2C1D",
   },
   description: {
-    fontFamily: Fonts.poppins || 'System',
+    fontFamily: Fonts.poppins || "System",
     fontSize: 14,
-    color: Colors.primary || '#4F2C1D',
+    color: Colors.primary || "#4F2C1D",
     marginBottom: 10,
-    opacity: 0.8
+    opacity: 0.8,
   },
   buttonMargin: {
-    marginTop: 10
-  }
+    marginTop: 10,
+  },
 });

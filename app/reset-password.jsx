@@ -1,43 +1,54 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
-import { Colors } from '../src/constants/Colors';
-import { Fonts } from '../src/constants/Fonts';
-import { FormInput } from '../src/components/FormInput';
-import { Button } from '../src/components/Button';
+import { Button } from "../src/components/Button";
+import { FormInput } from "../src/components/FormInput";
+import { Colors } from "../src/constants/Colors";
+import { Fonts } from "../src/constants/Fonts";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-  
-  const [email, setEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [email, setEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleReset = () => {
     if (!email || !newPassword || !confirmPassword) {
-      Alert.alert('Erro', 'Preencha todos os campos');
-      return;
-    }
-    
-    if (newPassword !== confirmPassword) {
-      Alert.alert('Erro', 'As senhas não coincidem');
+      Alert.alert("Erro", "Preencha todos os campos");
       return;
     }
 
-    Alert.alert('Sucesso', 'Senha redefinida com sucesso!', [
-      { text: 'OK', onPress: () => router.replace('/login') },
+    if (newPassword !== confirmPassword) {
+      Alert.alert("Erro", "As senhas não coincidem");
+      return;
+    }
+
+    Alert.alert("Sucesso", "Senha redefinida com sucesso!", [
+      { text: "OK", onPress: () => router.replace("/login") },
     ]);
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.screen} 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
     >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.card}>
           <Text style={styles.title}>Velvet Slice</Text>
@@ -79,9 +90,10 @@ export default function ResetPasswordPage() {
 
           <View style={styles.divider} />
 
-          <TouchableOpacity onPress={() => router.push('/register')}>
+          <TouchableOpacity onPress={() => router.push("/register")}>
             <Text style={styles.registerText}>
-              Ainda não possui conta? Crie uma <Text style={styles.linkUnderline}>aqui</Text>!
+              Ainda não possui conta? Crie uma{" "}
+              <Text style={styles.linkUnderline}>aqui</Text>!
             </Text>
           </TouchableOpacity>
         </View>
@@ -91,50 +103,50 @@ export default function ResetPasswordPage() {
 }
 
 const styles = StyleSheet.create({
-  screen: { 
-    flex: 1, 
-    backgroundColor: Colors.background 
+  screen: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
-  scrollContent: { 
-    flexGrow: 1, 
-    justifyContent: 'center', 
-    padding: 24 
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: 24,
   },
   card: {
     backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 16,
     gap: 16,
-    shadowColor: Colors.primary || '#000',
+    shadowColor: Colors.primary || "#000",
     shadowOpacity: 0.24,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 0 },
     elevation: 8,
   },
-  title: { 
-    fontFamily: Fonts.newsreader, 
-    fontSize: 24, 
-    color: Colors.primary, 
-    textAlign: 'center' 
+  title: {
+    fontFamily: Fonts.newsreader,
+    fontSize: 24,
+    color: Colors.primary,
+    textAlign: "center",
   },
-  subtitle: { 
-    fontFamily: Fonts.poppins, 
-    fontSize: 14, 
-    color: Colors.primary, 
-    textAlign: 'center' 
+  subtitle: {
+    fontFamily: Fonts.poppins,
+    fontSize: 14,
+    color: Colors.primary,
+    textAlign: "center",
   },
-  divider: { 
-    height: 1, 
-    backgroundColor: Colors.secondary || '#ccc', 
-    marginVertical: 4 
+  divider: {
+    height: 1,
+    backgroundColor: Colors.secondary || "#ccc",
+    marginVertical: 4,
   },
-  linkUnderline: { 
-    textDecorationLine: 'underline' 
+  linkUnderline: {
+    textDecorationLine: "underline",
   },
-  registerText: { 
-    fontFamily: Fonts.josefinSans || 'sans-serif', 
-    fontSize: 14, 
-    color: Colors.greenText || 'green', 
-    textAlign: 'center' 
+  registerText: {
+    fontFamily: Fonts.josefinSans || "sans-serif",
+    fontSize: 14,
+    color: Colors.greenText || "green",
+    textAlign: "center",
   },
 });

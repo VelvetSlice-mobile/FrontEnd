@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
@@ -89,9 +91,17 @@ export function AddAddressModal({ onClose, onSave, addressData, user }) {
   };
 
   return (
-    <View style={styles.overlay}>
+    <KeyboardAvoidingView
+      style={styles.overlay}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+    >
       <View style={styles.modal}>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
+        >
           <Text style={styles.title}>
             {addressData ? "Editar endereço" : "Adicionar endereço"}
           </Text>
@@ -182,7 +192,7 @@ export function AddAddressModal({ onClose, onSave, addressData, user }) {
           </View>
         </ScrollView>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -239,6 +249,9 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 10,
     marginBottom: 20,
+  },
+  scrollContent: {
+    paddingBottom: 24,
   },
   cancelButton: {
     flex: 1,
