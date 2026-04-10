@@ -1,9 +1,26 @@
-import { database } from "./database";
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+import { saveUser } from "./database";
+const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim();
+
+const getEndpoint = (path) => {
+  if (!API_URL) {
+    throw new Error(
+      "EXPO_PUBLIC_API_URL não configurado. Crie um arquivo .env na raiz com EXPO_PUBLIC_API_URL=http://<seu_ip_local>:3000",
+    );
+  }
+  return `${API_URL}${path}`;
+};
+
+const normalizeUser = (user) => ({
+  id: user.id ?? user.id_cliente ?? null,
+  name: user.name ?? user.nome ?? null,
+  email: user.email ?? null,
+  phone: user.phone ?? user.telefone ?? null,
+  password: user.password ?? user.senha ?? null,
+});
 
 export const authService = {
   register: async (userData) => {
-    const response = await fetch(`${API_URL}/api/register`, {
+    const response = await fetch(getEndpoint("/api/clients/register"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -13,25 +30,75 @@ export const authService = {
         telefone: userData.phone,
       }),
     });
-    if (!response.ok) throw new Error("Erro no registro: API indisponível");
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.error ||
+          errorData?.message ||
+          "Erro no registro: API indisponível",
+      );
+    }
 
     const data = await response.json();
+    const normalized = normalizeUser(data);
 
-    database.runSync(
-      "INSERT OR REPLACE INTO users (id, name, email, password, phone) VALUES (?, ?, ?, ?, ?)",
-      [data.id_cliente, userData.name, userData.email, userData.password, userData.phone],
-    );
+    saveUser({
+      ...normalized,
+      email: normalized.email || userData.email,
+      phone: normalized.phone || userData.phone,
+      password: userData.password,
+    });
 
-    return data;
+    return {
+      ...normalized,
+      email: normalized.email || userData.email,
+      phone: normalized.phone || userData.phone,
+    };
   },
 
   login: async (email, password) => {
-    const response = await fetch(`${API_URL}/api/login`, {
+    const response = await fetch(getEndpoint("/api/clients/login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, senha: password }),
     });
-    if (!response.ok) throw new Error("Erro no login: API indisponível");
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.error ||
+          errorData?.message ||
+          "Erro no login: API indisponível",
+      );
+    }
+
+    const data = await response.json();
+    const normalized = normalizeUser(data);
+
+    saveUser({
+      ...normalized,
+      password,
+    });
+
+    return normalized;
+  },
+
+  updateProfile: async (id, profileData) => {
+    const response = await fetch(getEndpoint(`/api/clients/${id}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome: profileData.name,
+        email: profileData.email,
+        telefone: profileData.phone,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.error || errorData?.message || "Erro ao atualizar perfil",
+      );
+    }
 
     return await response.json();
   },
@@ -40,7 +107,7 @@ export const authService = {
 export const productService = {
   getAll: async () => {
     try {
-      const response = await fetch(`${API_URL}/api/products`);
+      const response = await fetch(getEndpoint("/api/products"));
       const data = await response.json();
       return data.map((item) => ({
         id: item.id_bolo,
@@ -56,7 +123,7 @@ export const productService = {
 
   create: async (productData) => {
     try {
-      const response = await fetch(`${API_URL}/api/products`, {
+      const response = await fetch(getEndpoint("/api/products"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -74,7 +141,7 @@ export const productService = {
 
   delete: async (productId) => {
     try {
-      const response = await fetch(`${API_URL}/api/products/${productId}`, {
+      const response = await fetch(getEndpoint(`/api/products/${productId}`), {
         method: "DELETE",
       });
       return response.ok;
@@ -105,7 +172,7 @@ export const addressService = {
 
   create: async (addressData) => {
     try {
-      const response = await fetch(`${API_URL}/api/addresses`, {
+      const response = await fetch(getEndpoint("/api/addresses"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -126,8 +193,7 @@ export const addressService = {
           if (errorBody?.error) {
             errorMessage = `Erro ao salvar endereço: ${errorBody.error}`;
           }
-        } catch (_) {
-        }
+        } catch (_) {}
         throw new Error(errorMessage);
       }
 
@@ -139,7 +205,7 @@ export const addressService = {
 
   linkToClient: async (clientId, addressId) => {
     try {
-      const response = await fetch(`${API_URL}/api/addresses/link`, {
+      const response = await fetch(getEndpoint("/api/addresses/link"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -155,7 +221,7 @@ export const addressService = {
 
   update: async (addressId, addressData) => {
     try {
-      const response = await fetch(`${API_URL}/api/addresses/${addressId}`, {
+      const response = await fetch(getEndpoint(`/api/addresses/${addressId}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -178,7 +244,7 @@ export const addressService = {
 
   delete: async (addressId, clientId) => {
     try {
-      const response = await fetch(`${API_URL}/api/addresses/${addressId}`, {
+      const response = await fetch(getEndpoint(`/api/addresses/${addressId}`), {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clientId }),
@@ -193,7 +259,7 @@ export const addressService = {
 export const orderService = {
   createOrder: async (orderData) => {
     try {
-      const response = await fetch(`${API_URL}/api/orders`, {
+      const response = await fetch(getEndpoint("/api/orders"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -214,7 +280,9 @@ export const orderService = {
 
   getByClientId: async (clientId) => {
     try {
-      const response = await fetch(`${API_URL}/api/orders/client/${clientId}`);
+      const response = await fetch(
+        getEndpoint(`/api/orders/client/${clientId}`),
+      );
       if (!response.ok) throw new Error("Erro ao buscar pedidos");
       return await response.json();
     } catch (error) {
@@ -226,15 +294,18 @@ export const orderService = {
 export const paymentService = {
   createPayment: async (paymentData) => {
     try {
-      const response = await fetch(`${API_URL}/api/payments/create-preference`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: paymentData.items,
-          id_pedido: paymentData.id_pedido,
-          back_urls: paymentData.back_urls,
-        }),
-      });
+      const response = await fetch(
+        getEndpoint("/api/payments/create-preference"),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: paymentData.items,
+            id_pedido: paymentData.id_pedido,
+            back_urls: paymentData.back_urls,
+          }),
+        },
+      );
 
       if (!response.ok) throw new Error("Erro ao criar pagamento");
       return await response.json();

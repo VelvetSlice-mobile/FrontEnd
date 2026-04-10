@@ -1,12 +1,18 @@
-import React, { createContext, useContext, useState } from 'react';
-import { authService } from '../../src/services/api';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { authService } from "../services/api";
+import { deleteUser, getPersistedUser, saveUser } from "../services/database";
 
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
-  // Use esta linha para teste (como você pediu):
-  const [user, setUser] = useState({ id: 1, name: 'Miguel Dev', email: 'teste@teste.com', phone: '(11) 99999-9999' });
-  // const [user, setUser] = useState(null); 
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const persisted = getPersistedUser();
+    if (persisted) {
+      setUser(persisted);
+    }
+  }, []);
 
   const login = async (email, password) => {
     try {
@@ -29,17 +35,36 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    if (user?.email) {
+      deleteUser(user.email);
+    }
     setUser(null);
   };
 
-
   const updateUserData = async (newData) => {
     try {
-      setUser(prev => ({ ...prev, ...newData }));
+      if (!user?.id) {
+        throw new Error("Usuário não autenticado.");
+      }
+
+      await authService.updateProfile(user.id, {
+        name: newData.name ?? user.name,
+        email: newData.email ?? user.email,
+        phone: newData.phone ?? user.phone,
+      });
+
+      setUser((prev) => {
+        const updated = { ...prev, ...newData };
+        saveUser(updated);
+        return updated;
+      });
       return { success: true };
     } catch (error) {
       console.error("Erro ao atualizar dados:", error);
-      return { success: false, message: "Erro ao salvar alterações localmente." };
+      return {
+        success: false,
+        message: error.message || "Erro ao salvar alterações localmente.",
+      };
     }
   };
 
@@ -51,18 +76,18 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        updateUserData
+        updateUserData,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
   }
   return context;
 };

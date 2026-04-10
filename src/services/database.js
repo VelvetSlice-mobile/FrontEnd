@@ -1,6 +1,17 @@
-import * as SQLite from 'expo-sqlite';
+import * as SQLite from "expo-sqlite";
 
-const db = SQLite.openDatabaseSync('velvetslice.db');
+const db = SQLite.openDatabaseSync("velvetslice.db");
+
+const normalizeDbUser = (row) => {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    password: row.password,
+  };
+};
 
 export const initDatabase = () => {
   db.execSync(`
@@ -76,5 +87,26 @@ export const initDatabase = () => {
   }
 };
 
+export const getPersistedUser = () => {
+  const rows = db.getAllSync("SELECT * FROM users LIMIT 1");
+  return rows.length ? normalizeDbUser(rows[0]) : null;
+};
+
+export const saveUser = (user) => {
+  db.runSync(
+    "INSERT OR REPLACE INTO users (id, name, email, password, phone) VALUES (?, ?, ?, ?, ?)",
+    [
+      user.id ?? null,
+      user.name,
+      user.email,
+      user.password ?? null,
+      user.phone ?? null,
+    ],
+  );
+};
+
+export const deleteUser = (email) => {
+  db.runSync("DELETE FROM users WHERE email = ?", [email]);
+};
 
 export const database = db;
