@@ -49,11 +49,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!user,  
         login,  
         register,
-<<<<<<< HEAD
         logout 
-=======
-        logout 
->>>>>>> parent of db191ac (implementa fluxos de edição de perfil com validações)
       }}
     >
       {children}
