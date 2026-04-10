@@ -1,44 +1,84 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Button } from '../../src/components/Button';
+import { FormInput } from '../../src/components/FormInput';
+import { Navbar } from '../../src/components/Navbar';
 import { Colors } from '../../src/constants/Colors';
 import { Fonts } from '../../src/constants/Fonts';
-import { Navbar } from '../../src/components/Navbar';
-import { FormInput } from '../../src/components/FormInput';
-import { Button } from '../../src/components/Button';
+import { useAuth } from '../../src/contexts/AuthContext'; // Importado
 
 export default function EditEmailPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const { user, updateUserData } = useAuth(); // Hook de autenticação
 
-  const handleSave = () => {
+  // Iniciamos com o email atual do usuário
+  const [email, setEmail] = useState(user?.email || '');
+  const [loading, setLoading] = useState(false);
+
+  const handleSave = async () => {
+    // 1. Validação de campo vazio
     if (!email.trim()) {
-      Alert.alert('Erro', 'Digite o email');
-      return;
+      return Alert.alert('Erro', 'Por favor, digite um e-mail.');
     }
-    Alert.alert('Sucesso', 'Email alterado com sucesso!', [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+
+    // 2. Validação de formato de e-mail (Regex)
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(email.trim())) {
+      return Alert.alert('Erro', 'Por favor, insira um formato de e-mail válido.');
+    }
+
+    // 3. Verifica se o e-mail é igual ao atual
+    if (email.trim().toLowerCase() === user?.email?.toLowerCase()) {
+      return router.back();
+    }
+
+    try {
+      setLoading(true);
+
+      // Chamando o motor de atualização no Contexto
+      const result = await updateUserData({ email: email.trim().toLowerCase() });
+
+      if (result.success) {
+        Alert.alert('Sucesso', 'E-mail alterado com sucesso!', [
+          { text: 'OK', onPress: () => router.back() },
+        ]);
+      } else {
+        Alert.alert('Erro', result.message || 'Falha ao atualizar e-mail.');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Ocorreu um erro ao processar sua solicitação.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Alterar email</Text>
+        <Text style={styles.title}>Alterar e-mail</Text>
         <Text style={styles.description}>
-          Atualize seu endereço de email para manter suas informações atualizadas.
+          Atualize seu endereço de e-mail para manter suas informações de contato e segurança em dia.
         </Text>
+
         <FormInput
-          label="Email"
-          placeholder="Digite seu novo email"
+          label="Novo e-mail"
+          placeholder="exemplo@email.com"
           icon="mail"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          autoCorrect={false}
         />
-        <Button fullWidth onPress={handleSave}>
-          Alterar email
+
+        <Button
+          fullWidth
+          onPress={handleSave}
+          loading={loading}
+          style={styles.buttonMargin}
+        >
+          Salvar alteração
         </Button>
       </View>
       <Navbar />
@@ -47,8 +87,28 @@ export default function EditEmailPage() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: 22, paddingTop: 60, gap: 12 },
-  title: { fontFamily: Fonts.newsreader, fontSize: 24, color: Colors.primary },
-  description: { fontFamily: Fonts.poppins, fontSize: 14, color: Colors.primary },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background || '#FFF6E9'
+  },
+  content: {
+    paddingHorizontal: 22,
+    paddingTop: 60,
+    gap: 16
+  },
+  title: {
+    fontFamily: Fonts.newsreader || 'System',
+    fontSize: 24,
+    color: Colors.primary || '#4F2C1D'
+  },
+  description: {
+    fontFamily: Fonts.poppins || 'System',
+    fontSize: 14,
+    color: Colors.primary || '#4F2C1D',
+    opacity: 0.8,
+    marginBottom: 5
+  },
+  buttonMargin: {
+    marginTop: 10
+  }
 });
