@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { Camera, ChevronRight } from "lucide-react-native";
 import React, { useState } from "react";
+import { AddAddressModal } from "../src/components/AddAddressModal";
 import {
     Alert,
     Image,
@@ -24,6 +25,9 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddress, setSelectedAddress] = useState(null);
 
   const settingsItems = [
     {
@@ -61,12 +65,16 @@ export default function ProfilePage() {
   };
 
   const handleChangePhoto = () => {
-    Alert.alert("Foto de perfil", "Escolha uma opção", [
-      { text: "Tirar foto", onPress: () => console.log("Camera") },
-      { text: "Escolher da galeria", onPress: () => console.log("Galeria") },
-      { text: "Cancelar", style: "cancel" },
-    ]);
-  };
+  Alert.alert("Foto de perfil", "Escolha uma opção", [
+    { text: "Tirar foto", onPress: () => console.log("Camera") },
+    { text: "Escolher da galeria", onPress: () => console.log("Galeria") },
+    { text: "Cancelar", style: "cancel" },
+  ]);
+}; 
+
+    const handleSaveAddress = () => {
+      setSelectedAddress(null);
+    };
 
   return (
     <View style={styles.container}>
@@ -109,18 +117,46 @@ export default function ProfilePage() {
             </TouchableOpacity>
           ))}
 
-          <TouchableOpacity style={styles.settingCard} onPress={handleLogout}>
-            <Text style={styles.settingLabel}>Sair</Text>
+          <TouchableOpacity
+            style={styles.settingCard}
+            onPress={() => {
+              setSelectedAddress(null);
+              setShowAddressModal(true);
+            }}
+          >
+            <Text style={styles.settingLabel}>Adicionar endereço</Text>
             <ChevronRight size={16} color={Colors.accent || "#D4AF37"} />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setShowDeleteModal(true)}>
-            <Text style={styles.deleteText}>Apagar conta</Text>
+          <TouchableOpacity
+            style={styles.settingCard}
+            onPress={() => router.push("/orders")}
+          >
+            <Text style={styles.settingLabel}>Meus pedidos</Text>
+            <ChevronRight size={16} color={Colors.accent || "#D4AF37"} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingCard}
+            onPress={user ? handleLogout : () => router.push("/login")}
+          >
+            <Text style={styles.settingLabel}>
+              {user ? "Sair" : "Entrar"}
+            </Text>
+            <ChevronRight size={16} color={Colors.accent || "#D4AF37"} />
           </TouchableOpacity>
         </View>
       </ScrollView>
 
       <Navbar />
+
+      <AddAddressModal
+        visible={showAddressModal} 
+        onClose={() => setShowAddressModal(false)}
+        onSave={handleSaveAddress}
+        addressData={selectedAddress}
+        user={user}
+      />
 
       <Modal visible={showDeleteModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
