@@ -43,7 +43,7 @@ export default function ResetPasswordPage() {
     <KeyboardAvoidingView
       style={styles.screen}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      keyboardVerticalOffset={0}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}

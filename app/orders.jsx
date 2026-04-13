@@ -1,15 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
-import { Package, Truck, CheckCircle, ClipboardCopy } from 'lucide-react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { Colors } from '../src/constants/Colors';
-import { Fonts } from '../src/constants/Fonts';
-import { Navbar } from '../src/components/Navbar';
-import { Header } from '../src/components/Header';
-import { Button } from '../src/components/Button';
-import { database } from '../src/services/database';
-import { orderService } from '../src/services/api';
-import { useAuth } from '../src/contexts/AuthContext';
+import { useFocusEffect } from "@react-navigation/native";
+import {
+    CheckCircle,
+    ClipboardCopy,
+    Package,
+    Truck,
+} from "lucide-react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { Button } from "../src/components/Button";
+import { Header } from "../src/components/Header";
+import { Navbar } from "../src/components/Navbar";
+import { Colors } from "../src/constants/Colors";
+import { Fonts } from "../src/constants/Fonts";
+import { useAuth } from "../src/contexts/AuthContext";
+import { orderService } from "../src/services/api";
+import { database } from "../src/services/database";
 
 const STATUS_LABELS = {
   preparing: "Preparando",
@@ -20,7 +33,7 @@ const STATUS_LABELS = {
 export default function OrdersPage() {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
-  const [activeTab, setActiveTab] = useState('preparing');
+  const [activeTab, setActiveTab] = useState("preparing");
 
   const loadOrders = useCallback(async () => {
     if (!user) return;
@@ -30,20 +43,28 @@ export default function OrdersPage() {
 
     try {
       const normalizeStatus = (status) => {
-        const raw = (status || '').toString().trim().toLowerCase();
-        if (!raw || raw === 'pending' || raw.includes('pend')) return 'preparing';
-        if (raw.includes('pago') || raw.includes('paid') || raw.includes('approved')) return 'preparing';
-        if (raw.includes('rota') || raw.includes('transit')) return 'in_transit';
-        if (raw.includes('entreg') || raw.includes('delivered')) return 'delivered';
-        return 'preparing';
+        const raw = (status || "").toString().trim().toLowerCase();
+        if (!raw || raw === "pending" || raw.includes("pend"))
+          return "preparing";
+        if (
+          raw.includes("pago") ||
+          raw.includes("paid") ||
+          raw.includes("approved")
+        )
+          return "preparing";
+        if (raw.includes("rota") || raw.includes("transit"))
+          return "in_transit";
+        if (raw.includes("entreg") || raw.includes("delivered"))
+          return "delivered";
+        return "preparing";
       };
 
       const localResult = database.getAllSync(
-        'SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC',
-        [userId]
+        "SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC",
+        [userId],
       );
 
-      const localOrders = localResult.map(order => ({
+      const localOrders = localResult.map((order) => ({
         ...order,
         items: order.items ? JSON.parse(order.items) : [],
         status: normalizeStatus(order.status),
@@ -51,44 +72,71 @@ export default function OrdersPage() {
 
       const backendOrders = await orderService.getByClientId(userId);
 
-      if (Array.isArray(backendOrders) && backendOrders.length > 0) {
-        for (const backendOrder of backendOrders) {
-          const mappedStatus = normalizeStatus(backendOrder.status_pedido);
-          database.runSync(
-            'UPDATE orders SET status = ? WHERE id = ? AND user_id = ?',
-            [mappedStatus, backendOrder.id_pedido, userId]
-          );
-        }
-
-        const localMap = new Map(localOrders.map(order => [order.id, order]));
-        const merged = [...localOrders];
-
-        for (const backendOrder of backendOrders) {
-          const id = backendOrder.id_pedido;
-          const mappedStatus = normalizeStatus(backendOrder.status_pedido);
-
-          if (localMap.has(id)) {
-            const current = localMap.get(id);
-            current.status = mappedStatus;
-          } else {
-            merged.push({
-              id,
-              user_id: userId,
-              total: backendOrder.valor_total,
-              date: backendOrder.data_pedido,
-              status: mappedStatus,
-              items: [],
-            });
-          }
-        }
-
-        merged.sort((a, b) => (b.id || 0) - (a.id || 0));
-        setOrders(merged);
-      } else {
+      if (!Array.isArray(backendOrders)) {
         setOrders(localOrders);
+        return;
       }
+
+      const localMap = new Map(localOrders.map((order) => [order.id, order]));
+      const backendIds = backendOrders
+        .map((order) => order.id_pedido)
+        .filter((id) => Number.isFinite(Number(id)));
+
+      // Remove do cache local qualquer pedido do usuário que não existe mais no backend.
+      if (backendIds.length === 0) {
+        database.runSync("DELETE FROM orders WHERE user_id = ?", [userId]);
+      } else {
+        const placeholders = backendIds.map(() => "?").join(", ");
+        database.runSync(
+          `DELETE FROM orders WHERE user_id = ? AND id NOT IN (${placeholders})`,
+          [userId, ...backendIds],
+        );
+      }
+
+      const merged = backendOrders.map((backendOrder) => {
+        const id = backendOrder.id_pedido;
+        const mappedStatus = normalizeStatus(backendOrder.status_pedido);
+        const cached = localMap.get(id);
+
+        database.runSync(
+          "INSERT OR REPLACE INTO orders (id, user_id, total, items, date, status) VALUES (?, ?, ?, ?, ?, ?)",
+          [
+            id,
+            userId,
+            backendOrder.valor_total,
+            JSON.stringify(cached?.items || []),
+            backendOrder.data_pedido,
+            mappedStatus,
+          ],
+        );
+
+        return {
+          id,
+          user_id: userId,
+          total: backendOrder.valor_total,
+          date: backendOrder.data_pedido,
+          status: mappedStatus,
+          items: cached?.items || [],
+        };
+      });
+
+      merged.sort((a, b) => (b.id || 0) - (a.id || 0));
+      setOrders(merged);
     } catch (error) {
       console.error("Erro ao carregar pedidos:", error);
+
+      // Sem backend, usa o cache local como fallback para não quebrar a tela.
+      const fallbackLocal = database
+        .getAllSync("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC", [
+          userId,
+        ])
+        .map((order) => ({
+          ...order,
+          items: order.items ? JSON.parse(order.items) : [],
+          status:
+            (order.status || "").toString().trim().toLowerCase() || "preparing",
+        }));
+      setOrders(fallbackLocal);
     }
   }, [user]);
 
@@ -99,13 +147,16 @@ export default function OrdersPage() {
   useFocusEffect(
     useCallback(() => {
       loadOrders();
-    }, [loadOrders])
+    }, [loadOrders]),
   );
 
   const filteredOrders = orders.filter((o) => o.status === activeTab);
 
   const handleCopyTracking = (code) => {
-    Alert.alert('Copiado', `Código ${code} copiado para a área de transferência!`);
+    Alert.alert(
+      "Copiado",
+      `Código ${code} copiado para a área de transferência!`,
+    );
   };
 
   const statusOptions = ["preparing", "in_transit", "delivered"];
@@ -135,25 +186,33 @@ export default function OrdersPage() {
                 {status === "preparing" && (
                   <Package
                     size={18}
-                    color={activeTab === status ? Colors.background : Colors.primary}
+                    color={
+                      activeTab === status ? Colors.background : Colors.primary
+                    }
                   />
                 )}
                 {status === "in_transit" && (
                   <Truck
                     size={18}
-                    color={activeTab === status ? Colors.background : Colors.primary}
+                    color={
+                      activeTab === status ? Colors.background : Colors.primary
+                    }
                   />
                 )}
                 {status === "delivered" && (
                   <CheckCircle
                     size={18}
-                    color={activeTab === status ? Colors.background : Colors.primary}
+                    color={
+                      activeTab === status ? Colors.background : Colors.primary
+                    }
                   />
                 )}
-                <Text style={[
-                  styles.statusTabText,
-                  activeTab === status && styles.statusTabTextActive
-                ]}>
+                <Text
+                  style={[
+                    styles.statusTabText,
+                    activeTab === status && styles.statusTabTextActive,
+                  ]}
+                >
                   {STATUS_LABELS[status]}
                 </Text>
               </TouchableOpacity>
@@ -162,7 +221,9 @@ export default function OrdersPage() {
 
           {filteredOrders.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Nenhum pedido encontrado nesta categoria.</Text>
+              <Text style={styles.emptyText}>
+                Nenhum pedido encontrado nesta categoria.
+              </Text>
             </View>
           ) : (
             filteredOrders.map((order) => (
@@ -185,8 +246,11 @@ export default function OrdersPage() {
                   <Text style={styles.itemsTitle}>Detalhes</Text>
                   <View style={styles.itemDivider} />
 
-                  {order.items.map((item, idx) => (
-                    <View key={idx} style={styles.orderItem}>
+                  {order.items.map((item) => (
+                    <View
+                      key={`${item.id ?? item.name}-${item.size ?? "na"}-${item.quantity ?? 1}`}
+                      style={styles.orderItem}
+                    >
                       <Image
                         source={item.image}
                         style={styles.orderItemImage}
@@ -194,10 +258,15 @@ export default function OrdersPage() {
                       <View style={styles.orderItemInfo}>
                         <Text style={styles.orderItemName}>{item.name}</Text>
                         <View style={styles.sizeRow}>
-                          <Text style={styles.labelText}>Qtd: {item.quantity} | Tam: {item.size}</Text>
+                          <Text style={styles.labelText}>
+                            Qtd: {item.quantity} | Tam: {item.size}
+                          </Text>
                         </View>
                         <Text style={styles.totalPrice}>
-                          R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
+                          R${" "}
+                          {(item.price * item.quantity)
+                            .toFixed(2)
+                            .replace(".", ",")}
                         </Text>
                       </View>
                     </View>
@@ -213,11 +282,16 @@ export default function OrdersPage() {
                     <View>
                       <Text style={styles.orderTotalLabel}>Total Pago</Text>
                       <Text style={styles.orderTotalPrice}>
-                        R$ {Number(order.total).toFixed(2).replace('.', ',')}
+                        R$ {Number(order.total).toFixed(2).replace(".", ",")}
                       </Text>
                     </View>
-                    <Button 
-                      onPress={() => Alert.alert('Rastreio', 'Seu pedido está sendo processado pela Velvet Log.')}
+                    <Button
+                      onPress={() =>
+                        Alert.alert(
+                          "Rastreio",
+                          "Seu pedido está sendo processado pela Velvet Log.",
+                        )
+                      }
                     >
                       Rastrear
                     </Button>
@@ -244,7 +318,12 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     textAlign: "center",
   },
-  divider: { height: 1, backgroundColor: Colors.primary, marginVertical: 5, opacity: 0.3 },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.primary,
+    marginVertical: 5,
+    opacity: 0.3,
+  },
   tabsRow: { flexDirection: "row", gap: 10, justifyContent: "center" },
   statusTab: {
     flexDirection: "row",
@@ -263,12 +342,12 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   statusTabTextActive: { color: Colors.background },
-  emptyContainer: { marginTop: 50, alignItems: 'center' },
+  emptyContainer: { marginTop: 50, alignItems: "center" },
   emptyText: {
     textAlign: "center",
     color: Colors.secondary,
     fontFamily: Fonts.poppins,
-    fontSize: 14 
+    fontSize: 14,
   },
   orderCard: {
     borderRadius: 12,
@@ -279,28 +358,72 @@ const styles = StyleSheet.create({
   },
   orderHeader: {
     backgroundColor: Colors.primary,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 12,
   },
-  trackingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  trackingLabel: { fontFamily: Fonts.newsreader, fontSize: 18, color: '#D4AF37' },
-  copyRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  trackingCode: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.background, textDecorationLine: 'underline' },
-  orderDateText: { fontFamily: Fonts.poppins, fontSize: 10, color: Colors.background },
+  trackingRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  trackingLabel: {
+    fontFamily: Fonts.newsreader,
+    fontSize: 18,
+    color: "#D4AF37",
+  },
+  copyRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  trackingCode: {
+    fontFamily: Fonts.poppins,
+    fontSize: 12,
+    color: Colors.background,
+    textDecorationLine: "underline",
+  },
+  orderDateText: {
+    fontFamily: Fonts.poppins,
+    fontSize: 10,
+    color: Colors.background,
+  },
   orderItems: { padding: 12, gap: 10 },
-  itemsTitle: { fontFamily: Fonts.newsreader, fontSize: 18, color: '#000' },
-  itemDivider: { height: 1, backgroundColor: Colors.secondary, opacity: 0.2, marginVertical: 5 },
-  orderItem: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+  itemsTitle: { fontFamily: Fonts.newsreader, fontSize: 18, color: "#000" },
+  itemDivider: {
+    height: 1,
+    backgroundColor: Colors.secondary,
+    opacity: 0.2,
+    marginVertical: 5,
+  },
+  orderItem: { flexDirection: "row", gap: 12, marginBottom: 10 },
   orderItemImage: { width: 60, height: 60, borderRadius: 8 },
   orderItemInfo: { flex: 1, gap: 2 },
-  orderItemName: { fontFamily: Fonts.newsreader, fontSize: 18, color: Colors.primary },
-  sizeRow: { flexDirection: 'row', alignItems: 'center' },
-  labelText: { fontFamily: Fonts.poppins, fontSize: 13, color: '#666' },
-  totalPrice: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.primary },
-  trackingDescription: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary, fontStyle: 'italic' },
-  orderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 },
-  orderTotalLabel: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary },
-  orderTotalPrice: { fontFamily: Fonts.newsreaderBold, fontSize: 20, color: Colors.primary },
+  orderItemName: {
+    fontFamily: Fonts.newsreader,
+    fontSize: 18,
+    color: Colors.primary,
+  },
+  sizeRow: { flexDirection: "row", alignItems: "center" },
+  labelText: { fontFamily: Fonts.poppins, fontSize: 13, color: "#666" },
+  totalPrice: {
+    fontFamily: Fonts.newsreaderBold,
+    fontSize: 16,
+    color: Colors.primary,
+  },
+  trackingDescription: {
+    fontFamily: Fonts.poppins,
+    fontSize: 12,
+    color: Colors.secondary,
+    fontStyle: "italic",
+  },
+  orderFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 5,
+  },
+  orderTotalLabel: {
+    fontFamily: Fonts.poppins,
+    fontSize: 12,
+    color: Colors.secondary,
+  },
+  orderTotalPrice: {
+    fontFamily: Fonts.newsreaderBold,
+    fontSize: 20,
+    color: Colors.primary,
+  },
 });

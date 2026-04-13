@@ -6,7 +6,7 @@ import {
     Platform,
     ScrollView,
     StyleSheet,
-    Text
+    Text,
 } from "react-native";
 import { Button } from "../../src/components/Button";
 import { FormInput } from "../../src/components/FormInput";
@@ -47,7 +47,7 @@ export default function EditNamePage() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      keyboardVerticalOffset={0}
     >
       <ScrollView
         contentContainerStyle={styles.content}
