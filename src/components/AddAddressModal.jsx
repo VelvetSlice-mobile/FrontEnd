@@ -1,22 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { Modal } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { addressService } from "../services/api";
 import { Button } from "./Button";
 
-export function AddAddressModal({ onClose, onSave, addressData, user, visible }) {
+export function AddAddressModal({
+  onClose,
+  onSave,
+  onDelete,
+  addressData,
+  user,
+}) {
   const userId = user?.id ?? user?.id_cliente;
 
   const [placeName, setPlaceName] = useState("");
@@ -93,19 +98,17 @@ export function AddAddressModal({ onClose, onSave, addressData, user, visible })
   };
 
   return (
-  <Modal visible={visible} transparent={false} animationType="slide">
-    <SafeAreaView style={{ flex: 1 }}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
-      >
-        <View style={styles.modal}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scrollContent}
-          >
+    <KeyboardAvoidingView
+      style={styles.overlay}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+    >
+      <View style={styles.modal}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
+        >
           <Text style={styles.title}>
             {addressData ? "Editar endereço" : "Adicionar endereço"}
           </Text>
@@ -194,23 +197,39 @@ export function AddAddressModal({ onClose, onSave, addressData, user, visible })
               {addressData ? "Salvar alterações" : "Adicionar"}
             </Button>
           </View>
+
+          {addressData?.id_endereco && onDelete && (
+            <TouchableOpacity
+              style={styles.deleteAddressButton}
+              onPress={() => onDelete(addressData)}
+              disabled={isSaving}
+            >
+              <Text style={styles.deleteAddressText}>Excluir endereço</Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </View>
     </KeyboardAvoidingView>
-  </SafeAreaView>
-</Modal>
-);}
+  );
+}
 
 const styles = StyleSheet.create({
   overlay: {
-  flex: 1,
-  backgroundColor: Colors.background || "#FFF",
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   modal: {
-  flex: 1,
-  backgroundColor: Colors.background || "#FFF",
-  padding: 25,
-  paddingTop: 50,
+    backgroundColor: Colors.background || "#FFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 25,
+    maxHeight: "85%",
+    elevation: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   title: {
     fontFamily: Fonts.newsreader,
@@ -257,5 +276,14 @@ const styles = StyleSheet.create({
     elevation: 0,
     borderWidth: 1,
     borderColor: Colors.primary,
+  },
+  deleteAddressButton: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  deleteAddressText: {
+    fontFamily: Fonts.poppins,
+    fontSize: 14,
+    color: "#e74c3c",
   },
 });

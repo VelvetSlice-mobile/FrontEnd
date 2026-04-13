@@ -1,16 +1,16 @@
 import {
-  Newsreader_400Regular,
-  Newsreader_700Bold,
-  useFonts,
+    Newsreader_400Regular,
+    Newsreader_700Bold,
+    useFonts,
 } from "@expo-google-fonts/newsreader";
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { Navbar } from "../src/components/Navbar";
 import { AuthProvider } from "../src/contexts/AuthContext";
 import { CartProvider } from "../src/contexts/CartContext";
+import { NavProvider, useNav } from "../src/contexts/NavContext";
 import { initDatabase } from "../src/services/database";
-import { NavProvider, useNav } from "../src/contexts/NavContext"; 
-import { Navbar } from "../src/components/Navbar";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,8 +23,7 @@ export default function Layout() {
   useEffect(() => {
     try {
       initDatabase();
-    } catch (error) {
-    }
+    } catch (error) {}
   }, []);
 
   useEffect(() => {
@@ -76,6 +75,10 @@ export default function Layout() {
 }
 
 function NavbarGlobal() {
+  const pathname = usePathname();
   const { showNav } = useNav();
-  return <Navbar visible={showNav} />;
+  const hiddenRoutes = ["/login", "/register", "/reset-password"];
+  const shouldShowNavbar = showNav && !hiddenRoutes.includes(pathname);
+
+  return <Navbar visible={shouldShowNavbar} />;
 }

@@ -1,4 +1,4 @@
-import { saveUser } from "./database";
+import { database, saveUser } from "./database";
 const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim();
 
 const getEndpoint = (path) => {
@@ -12,11 +12,67 @@ const getEndpoint = (path) => {
 
 const normalizeUser = (user) => ({
   id: user.id ?? user.id_cliente ?? null,
+  id_cliente: user.id_cliente ?? user.id ?? null,
   name: user.name ?? user.nome ?? null,
   email: user.email ?? null,
   phone: user.phone ?? user.telefone ?? null,
   password: user.password ?? user.senha ?? null,
+  avatarUrl: user.avatarUrl ?? user.avatar_url ?? user.foto_perfil ?? null,
+  accessToken: user.accessToken ?? user.access_token ?? null,
+  tokenType: user.tokenType ?? user.token_type ?? null,
 });
+
+const normalizeSession = (payload, fallbackUserData = {}) => {
+  const source = payload?.user ?? payload ?? {};
+  const normalized = normalizeUser(source);
+
+  return {
+    ...normalized,
+    name: normalized.name ?? fallbackUserData.name ?? null,
+    email: normalized.email ?? fallbackUserData.email ?? null,
+    phone: normalized.phone ?? fallbackUserData.phone ?? null,
+    password: fallbackUserData.password ?? null,
+    accessToken:
+      payload?.access_token ??
+      payload?.accessToken ??
+      normalized.accessToken ??
+      null,
+    tokenType:
+      payload?.token_type ??
+      payload?.tokenType ??
+      normalized.tokenType ??
+      "Bearer",
+  };
+};
+
+const getApiErrorMessage = async (response, fallbackMessage) => {
+  const errorData = await response.json().catch(() => null);
+  if (response.status === 400) {
+    return (
+      errorData?.error ||
+      errorData?.message ||
+      "Arquivo inválido. Envie uma imagem JPG, PNG ou WEBP de até 3MB."
+    );
+  }
+
+  if (response.status === 401) {
+    return (
+      errorData?.error ||
+      errorData?.message ||
+      "Sessão expirada. Faça login novamente."
+    );
+  }
+
+  if (response.status === 403) {
+    return (
+      errorData?.error ||
+      errorData?.message ||
+      "Você não tem permissão para alterar esta foto."
+    );
+  }
+
+  return errorData?.error || errorData?.message || fallbackMessage;
+};
 
 export const authService = {
   register: async (userData) => {
@@ -31,16 +87,16 @@ export const authService = {
       }),
     });
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
       throw new Error(
-        errorData?.error ||
-          errorData?.message ||
+        await getApiErrorMessage(
+          response,
           "Erro no registro: API indisponível",
+        ),
       );
     }
 
     const data = await response.json();
-    const normalized = normalizeUser(data);
+    const normalized = normalizeSession(data, userData);
 
     saveUser({
       ...normalized,
@@ -63,16 +119,13 @@ export const authService = {
       body: JSON.stringify({ email, senha: password }),
     });
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
       throw new Error(
-        errorData?.error ||
-          errorData?.message ||
-          "Erro no login: API indisponível",
+        await getApiErrorMessage(response, "Erro no login: API indisponível"),
       );
     }
 
     const data = await response.json();
-    const normalized = normalizeUser(data);
+    const normalized = normalizeSession(data, { email, password });
 
     saveUser({
       ...normalized,
@@ -101,6 +154,41 @@ export const authService = {
     }
 
     return await response.json();
+  },
+
+  uploadAvatar: async (id, imageUri, accessToken) => {
+    const formData = new FormData();
+    const fileName = imageUri.split("/").pop() || `avatar-${Date.now()}.jpg`;
+    const ext = fileName.split(".").pop()?.toLowerCase();
+    const mimeType =
+      ext === "png"
+        ? "image/png"
+        : ext === "webp"
+          ? "image/webp"
+          : "image/jpeg";
+
+    formData.append("file", {
+      uri: imageUri,
+      name: fileName,
+      type: mimeType,
+    });
+
+    const response = await fetch(getEndpoint(`/api/clients/${id}/avatar`), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        await getApiErrorMessage(response, "Erro ao enviar foto"),
+      );
+    }
+
+    const data = await response.json();
+    return normalizeUser(data?.user ?? data);
   },
 };
 
