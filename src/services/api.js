@@ -1,5 +1,6 @@
 import { database, saveUser } from "./database";
 const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim();
+const REQUEST_TIMEOUT_MS = 12000;
 
 const getEndpoint = (path) => {
   if (!API_URL) {
@@ -7,7 +8,38 @@ const getEndpoint = (path) => {
       "EXPO_PUBLIC_API_URL não configurado. Crie um arquivo .env na raiz com EXPO_PUBLIC_API_URL=http://<seu_ip_local>:3000",
     );
   }
-  return `${API_URL}${path}`;
+
+  const base = API_URL.replace(/\/+$/, "");
+  return `${base}${path}`;
+};
+
+const fetchWithTimeout = async (
+  path,
+  options = {},
+  timeoutMs = REQUEST_TIMEOUT_MS,
+) => {
+  const endpoint = getEndpoint(path);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(endpoint, {
+      ...options,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error(
+        `Timeout de rede ao acessar ${endpoint}. Verifique se o backend está ativo e acessível pela mesma rede do dispositivo.`,
+      );
+    }
+
+    throw new Error(
+      `Falha de conexão com ${endpoint}. Confirme se EXPO_PUBLIC_API_URL (${API_URL}) está correto e se celular/emulador consegue acessar esse IP.`,
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
 };
 
 const normalizeUser = (user) => ({
@@ -76,7 +108,7 @@ const getApiErrorMessage = async (response, fallbackMessage) => {
 
 export const authService = {
   register: async (userData) => {
-    const response = await fetch(getEndpoint("/api/clients/register"), {
+    const response = await fetchWithTimeout("/api/clients/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -113,7 +145,7 @@ export const authService = {
   },
 
   login: async (email, password) => {
-    const response = await fetch(getEndpoint("/api/clients/login"), {
+    const response = await fetchWithTimeout("/api/clients/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, senha: password }),
@@ -136,7 +168,7 @@ export const authService = {
   },
 
   updateProfile: async (id, profileData) => {
-    const response = await fetch(getEndpoint(`/api/clients/${id}`), {
+    const response = await fetchWithTimeout(`/api/clients/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -160,12 +192,12 @@ export const authService = {
     const formData = new FormData();
     const fileName = imageUri.split("/").pop() || `avatar-${Date.now()}.jpg`;
     const ext = fileName.split(".").pop()?.toLowerCase();
-    const mimeType =
-      ext === "png"
-        ? "image/png"
-        : ext === "webp"
-          ? "image/webp"
-          : "image/jpeg";
+    let mimeType = "image/jpeg";
+    if (ext === "png") {
+      mimeType = "image/png";
+    } else if (ext === "webp") {
+      mimeType = "image/webp";
+    }
 
     formData.append("file", {
       uri: imageUri,
@@ -173,7 +205,7 @@ export const authService = {
       type: mimeType,
     });
 
-    const response = await fetch(getEndpoint(`/api/clients/${id}/avatar`), {
+    const response = await fetchWithTimeout(`/api/clients/${id}/avatar`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -195,7 +227,7 @@ export const authService = {
 export const productService = {
   getAll: async () => {
     try {
-      const response = await fetch(getEndpoint("/api/products"));
+      const response = await fetchWithTimeout("/api/products");
       const data = await response.json();
       return data.map((item) => ({
         id: item.id_bolo,
@@ -205,35 +237,33 @@ export const productService = {
         image: item.imagem,
       }));
     } catch (error) {
+      console.warn("Falha ao carregar produtos:", error?.message);
       return [];
     }
   },
 
   create: async (productData) => {
-    try {
-      const response = await fetch(getEndpoint("/api/products"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome: productData.name,
-          descricao: productData.description,
-          preco: productData.price,
-          imagem: productData.image,
-        }),
-      });
-      return await response.json();
-    } catch (error) {
-      throw error;
-    }
+    const response = await fetchWithTimeout("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome: productData.name,
+        descricao: productData.description,
+        preco: productData.price,
+        imagem: productData.image,
+      }),
+    });
+    return await response.json();
   },
 
   delete: async (productId) => {
     try {
-      const response = await fetch(getEndpoint(`/api/products/${productId}`), {
+      const response = await fetchWithTimeout(`/api/products/${productId}`, {
         method: "DELETE",
       });
       return response.ok;
     } catch (error) {
+      console.warn("Falha ao excluir produto:", error?.message);
       return false;
     }
   },
@@ -242,18 +272,19 @@ export const productService = {
 export const addressService = {
   getByClientId: async (clientId) => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/addresses/client/${clientId}`,
+      const response = await fetchWithTimeout(
+        `/api/addresses/client/${clientId}`,
       );
       if (!response.ok) return null;
 
       const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
+      if (contentType?.includes("application/json")) {
         const data = await response.json();
         return data;
       }
       return null;
     } catch (error) {
+      console.warn("Falha ao carregar endereços:", error?.message);
       return null;
     }
   },
@@ -281,12 +312,18 @@ export const addressService = {
           if (errorBody?.error) {
             errorMessage = `Erro ao salvar endereço: ${errorBody.error}`;
           }
-        } catch (_) {}
+        } catch (parseError) {
+          console.warn(
+            "Não foi possível ler erro detalhado de endereço:",
+            parseError?.message,
+          );
+        }
         throw new Error(errorMessage);
       }
 
       return await response.json();
     } catch (error) {
+      console.error("Falha ao criar endereço:", error?.message);
       throw error;
     }
   },
@@ -303,31 +340,28 @@ export const addressService = {
       });
       return response.ok;
     } catch (error) {
+      console.warn("Falha ao vincular endereço ao cliente:", error?.message);
       return false;
     }
   },
 
   update: async (addressId, addressData) => {
-    try {
-      const response = await fetch(getEndpoint(`/api/addresses/${addressId}`), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome_endereco: addressData.nome_endereco,
-          logradouro: addressData.logradouro,
-          numero: addressData.numero,
-          CEP: addressData.CEP,
-          estado: addressData.estado,
-          complemento: addressData.complemento,
-        }),
-      });
+    const response = await fetch(getEndpoint(`/api/addresses/${addressId}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome_endereco: addressData.nome_endereco,
+        logradouro: addressData.logradouro,
+        numero: addressData.numero,
+        CEP: addressData.CEP,
+        estado: addressData.estado,
+        complemento: addressData.complemento,
+      }),
+    });
 
-      if (!response.ok) throw new Error("Erro ao atualizar");
+    if (!response.ok) throw new Error("Erro ao atualizar");
 
-      return true;
-    } catch (error) {
-      throw error;
-    }
+    return true;
   },
 
   delete: async (addressId, clientId) => {
@@ -339,6 +373,7 @@ export const addressService = {
       });
       return response.ok;
     } catch (error) {
+      console.warn("Falha ao excluir endereço:", error?.message);
       return false;
     }
   },
@@ -346,60 +381,46 @@ export const addressService = {
 
 export const orderService = {
   createOrder: async (orderData) => {
-    try {
-      const response = await fetch(getEndpoint("/api/orders"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          valor_total: orderData.valor_total,
-          metodo_pagamento: orderData.metodo_pagamento,
-          fk_Cliente_id_cliente:
-            orderData.fk_Cliente_id_cliente ?? orderData.fk_cliente_id_cliente,
-          itens: orderData.itens,
-        }),
-      });
+    const response = await fetch(getEndpoint("/api/orders"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        valor_total: orderData.valor_total,
+        metodo_pagamento: orderData.metodo_pagamento,
+        fk_Cliente_id_cliente:
+          orderData.fk_Cliente_id_cliente ?? orderData.fk_cliente_id_cliente,
+        itens: orderData.itens,
+      }),
+    });
 
-      if (!response.ok) throw new Error("Erro ao criar pedido");
-      return await response.json();
-    } catch (error) {
-      throw error;
-    }
+    if (!response.ok) throw new Error("Erro ao criar pedido");
+    return await response.json();
   },
 
   getByClientId: async (clientId) => {
-    try {
-      const response = await fetch(
-        getEndpoint(`/api/orders/client/${clientId}`),
-      );
-      if (!response.ok) throw new Error("Erro ao buscar pedidos");
-      return await response.json();
-    } catch (error) {
-      return [];
-    }
+    const response = await fetchWithTimeout(`/api/orders/client/${clientId}`);
+    if (!response.ok) throw new Error("Erro ao buscar pedidos");
+    return await response.json();
   },
 };
 
 export const paymentService = {
   createPayment: async (paymentData) => {
-    try {
-      const response = await fetch(
-        getEndpoint("/api/payments/create-preference"),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items: paymentData.items,
-            id_pedido: paymentData.id_pedido,
-            back_urls: paymentData.back_urls,
-          }),
-        },
-      );
+    const response = await fetch(
+      getEndpoint("/api/payments/create-preference"),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: paymentData.items,
+          id_pedido: paymentData.id_pedido,
+          back_urls: paymentData.back_urls,
+        }),
+      },
+    );
 
-      if (!response.ok) throw new Error("Erro ao criar pagamento");
-      return await response.json();
-    } catch (error) {
-      throw error;
-    }
+    if (!response.ok) throw new Error("Erro ao criar pagamento");
+    return await response.json();
   },
 };
 

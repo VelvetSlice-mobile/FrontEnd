@@ -1,67 +1,63 @@
-import React, {
-  useEffect,
-  useState,
-  useRef,
-} from "react";
-import {
-  Alert,
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Linking,
-} from "react-native";
-import { useRouter } from "expo-router";
 import * as ExpoLinking from "expo-linking";
+import { useRouter } from "expo-router";
 import {
-  CreditCard,
-  Plus,
-  QrCode,
-  Trash2,
-  MapPin,
-  PencilLine,
-  ShoppingBag,
-  CheckCircle,
+    CheckCircle,
+    CreditCard,
+    MapPin,
+    PencilLine,
+    Plus,
+    QrCode,
+    ShoppingBag,
+    Trash2,
 } from "lucide-react-native";
-import { useAuth } from "../src/contexts/AuthContext";
-import { useCart } from "../src/contexts/CartContext";
-import { database } from "../src/services/database";
-import { addressService, orderService, paymentService } from "../src/services/api";
-import { Header } from "../src/components/Header";
-import { Button } from "../src/components/Button";
+import React, { useEffect, useRef, useState } from "react";
+import {
+    Alert,
+    Image,
+    Linking,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import { AddAddressModal } from "../src/components/AddAddressModal";
+import { Button } from "../src/components/Button";
+import { Header } from "../src/components/Header";
 import { Colors } from "../src/constants/Colors";
 import { Fonts } from "../src/constants/Fonts";
+import { useAuth } from "../src/contexts/AuthContext";
+import { useCart } from "../src/contexts/CartContext";
 import { useNav } from "../src/contexts/NavContext";
+import {
+    addressService,
+    orderService,
+    paymentService,
+} from "../src/services/api";
+import { database } from "../src/services/database";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useAuth();
   const userId = user?.id ?? user?.id_cliente;
 
-  const {
-    items: cart,
-    total: totalValue,
-    removeFromCart,
-  } = useCart();
+  const { items: cart, total: totalValue, removeFromCart } = useCart();
 
-    const [paymentMethod, setPaymentMethod] = useState("card");
-    const [showAddAddress, setShowAddAddress] = useState(false);
-    const [addresses, setAddresses] = useState([]);
-    const [addressToEdit, setAddressToEdit] = useState(null);
-    const [loadingAddress, setLoadingAddress] = useState(true);
-    const [selectedAddress, setSelectedAddress] = useState(null);
-    const [itemToEdit, setItemToEdit] = useState(null);
-    const [showEditItem, setShowEditItem] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [addressToEdit, setAddressToEdit] = useState(null);
+  const [loadingAddress, setLoadingAddress] = useState(true);
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [itemToEdit, setItemToEdit] = useState(null);
+  const [showEditItem, setShowEditItem] = useState(false);
   const { updateItem } = useCart();
-    const [itemOriginal, setItemOriginal] = useState(null);
+  const [itemOriginal, setItemOriginal] = useState(null);
 
-    const shipping = 80.0;
-    const discount = 20.0;
-    const grandTotal = totalValue + shipping - discount;
+  const shipping = 80.0;
+  const discount = 20.0;
+  const grandTotal = totalValue + shipping - discount;
 
   const loadAddress = async () => {
     setLoadingAddress(true);
@@ -99,29 +95,29 @@ export default function CheckoutPage() {
     loadAddress();
   }, [userId]);
 
+  const getWeightMultiplier = (size) => {
+    const parsed = Number.parseInt(size, 10);
+    return Number.isNaN(parsed) ? 1 : parsed;
+  };
+
   const handleFinishOrder = async () => {
     if (!selectedAddress) {
       Alert.alert("Atenção", "Selecione um endereço para continuar.");
       return;
     }
 
-    const getWeightMultiplier = (size) => {
-      const parsed = parseInt(size, 10);
-      return Number.isNaN(parsed) ? 1 : parsed;
-    };
-
-    const itens = cart.map(item => ({
+    const itens = cart.map((item) => ({
       id_bolo: item.id,
       quantidade: item.quantity,
       preco_unitario: item.price * getWeightMultiplier(item.size),
-      tamanho: item.size || "Padrão"
+      tamanho: item.size || "Padrão",
     }));
 
     const orderData = {
       valor_total: grandTotal,
       metodo_pagamento: paymentMethod === "card" ? "Cartão" : "PIX",
-      fk_Cliente_id_cliente: user?.id,
-      itens: itens
+      fk_Cliente_id_cliente: userId,
+      itens: itens,
     };
 
     try {
@@ -154,16 +150,28 @@ export default function CheckoutPage() {
         const localDate = new Date().toLocaleString("pt-BR");
         database.runSync(
           "INSERT OR REPLACE INTO orders (id, user_id, total, items, date, status) VALUES (?, ?, ?, ?, ?, ?)",
-          [orderId, userId, grandTotal, JSON.stringify(cart), localDate, "preparing"],
+          [
+            orderId,
+            userId,
+            grandTotal,
+            JSON.stringify(cart),
+            localDate,
+            "preparing",
+          ],
         );
 
         const firstItemName = cart.length > 0 ? cart[0].name : "item";
         database.runSync(
           "INSERT INTO notifications (user_id, title, message, status, date) VALUES (?, ?, ?, ?, ?)",
-          [userId, `PEDIDO #${orderId} - PAGAMENTO`, `Pagamento iniciado para ${firstItemName}.`, "pending", localDate],
+          [
+            userId,
+            `PEDIDO #${orderId} - PAGAMENTO`,
+            `Pagamento iniciado para ${firstItemName}.`,
+            "pending",
+            localDate,
+          ],
         );
-      } catch (localErr) {
-      }
+      } catch (localErr) {}
 
       const checkoutUrl = paymentResponse.init_point;
       if (checkoutUrl) {
@@ -197,7 +205,7 @@ export default function CheckoutPage() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -304,8 +312,8 @@ export default function CheckoutPage() {
               <Text style={styles.emptyText}>Carrinho vazio.</Text>
             </View>
           ) : (
-            cart.map((item, index) => (
-              <View key={index} style={styles.orderItem}>
+            cart.map((item) => (
+              <View key={`${item.id}-${item.size}`} style={styles.orderItem}>
                 <Image source={item.image} style={styles.orderItemImage} />
                 <View style={styles.orderItemInfo}>
                   <View style={styles.itemHeaderRow}>
@@ -350,7 +358,13 @@ export default function CheckoutPage() {
 
                   <Text style={styles.itemTotalPrice}>
                     R${" "}
-                    {(item.price * item.quantity).toFixed(2).replace(".", ",")}
+                    {(
+                      item.price *
+                      getWeightMultiplier(item.size) *
+                      item.quantity
+                    )
+                      .toFixed(2)
+                      .replace(".", ",")}
                   </Text>
                 </View>
               </View>
@@ -373,7 +387,12 @@ export default function CheckoutPage() {
                 size={24}
                 color={paymentMethod === "card" ? "#FFF" : Colors.primary}
               />
-              <Text style={[styles.paymentText, paymentMethod === "card" && { color: "#FFF" }]}>
+              <Text
+                style={[
+                  styles.paymentText,
+                  paymentMethod === "card" && { color: "#FFF" },
+                ]}
+              >
                 Cartão
               </Text>
             </TouchableOpacity>
@@ -389,7 +408,12 @@ export default function CheckoutPage() {
                 size={24}
                 color={paymentMethod === "pix" ? "#FFF" : Colors.primary}
               />
-              <Text style={[styles.paymentText, paymentMethod === "pix" && { color: "#FFF" }]}>
+              <Text
+                style={[
+                  styles.paymentText,
+                  paymentMethod === "pix" && { color: "#FFF" },
+                ]}
+              >
                 PIX
               </Text>
             </TouchableOpacity>
@@ -593,7 +617,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   addressCardSelected: {
-    backgroundColor: '#f0e0cc',
+    backgroundColor: "#f0e0cc",
     borderWidth: 2,
     borderColor: Colors.secondary,
   },
