@@ -68,6 +68,40 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUserAvatar = async (imageUri) => {
+    try {
+      if (!user?.id && !user?.id_cliente) {
+        throw new Error("Usuário não autenticado.");
+      }
+
+      const userId = user.id ?? user.id_cliente;
+      const accessToken = user.accessToken ?? user.access_token;
+
+      if (!accessToken) {
+        throw new Error("Sessão expirada. Faça login novamente.");
+      }
+
+      const updatedUser = await authService.uploadAvatar(
+        userId,
+        imageUri,
+        accessToken,
+      );
+
+      setUser((prev) => {
+        const merged = { ...prev, ...updatedUser };
+        saveUser(merged);
+        return merged;
+      });
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || "Não foi possível atualizar a foto.",
+      };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -77,6 +111,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         updateUserData,
+        updateUserAvatar,
       }}
     >
       {children}

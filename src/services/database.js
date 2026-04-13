@@ -6,10 +6,14 @@ const normalizeDbUser = (row) => {
   if (!row) return null;
   return {
     id: row.id,
+    id_cliente: row.id,
     name: row.name,
     email: row.email,
     phone: row.phone,
     password: row.password,
+    avatarUrl: row.avatar_url,
+    accessToken: row.access_token,
+    tokenType: row.token_type,
   };
 };
 
@@ -20,9 +24,30 @@ export const initDatabase = () => {
       name TEXT,
       email TEXT UNIQUE,
       password TEXT,
-      phone TEXT
+      phone TEXT,
+      avatar_url TEXT,
+      access_token TEXT,
+      token_type TEXT
     );
   `);
+
+  const userColumns = db.getAllSync("PRAGMA table_info(users)");
+  const hasAvatarColumn = userColumns.some((col) => col.name === "avatar_url");
+  const hasAccessTokenColumn = userColumns.some(
+    (col) => col.name === "access_token",
+  );
+  const hasTokenTypeColumn = userColumns.some(
+    (col) => col.name === "token_type",
+  );
+  if (!hasAvatarColumn) {
+    db.execSync("ALTER TABLE users ADD COLUMN avatar_url TEXT;");
+  }
+  if (!hasAccessTokenColumn) {
+    db.execSync("ALTER TABLE users ADD COLUMN access_token TEXT;");
+  }
+  if (!hasTokenTypeColumn) {
+    db.execSync("ALTER TABLE users ADD COLUMN token_type TEXT;");
+  }
 
   db.execSync(`
     CREATE TABLE IF NOT EXISTS notifications (
@@ -94,13 +119,16 @@ export const getPersistedUser = () => {
 
 export const saveUser = (user) => {
   db.runSync(
-    "INSERT OR REPLACE INTO users (id, name, email, password, phone) VALUES (?, ?, ?, ?, ?)",
+    "INSERT OR REPLACE INTO users (id, name, email, password, phone, avatar_url, access_token, token_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     [
       user.id ?? null,
       user.name,
       user.email,
       user.password ?? null,
       user.phone ?? null,
+      user.avatarUrl ?? null,
+      user.accessToken ?? null,
+      user.tokenType ?? null,
     ],
   );
 };
