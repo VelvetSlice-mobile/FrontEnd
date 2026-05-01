@@ -1,26 +1,26 @@
 import * as ExpoLinking from "expo-linking";
 import { useRouter } from "expo-router";
 import {
-    CheckCircle,
-    CreditCard,
-    MapPin,
-    PencilLine,
-    Plus,
-    QrCode,
-    ShoppingBag,
-    Trash2,
+  CheckCircle,
+  CreditCard,
+  MapPin,
+  PencilLine,
+  Plus,
+  QrCode,
+  ShoppingBag,
+  Trash2,
 } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    Alert,
-    Image,
-    Linking,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  Linking,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { AddAddressModal } from "../src/components/AddAddressModal";
 import { Button } from "../src/components/Button";
@@ -31,9 +31,9 @@ import { useAuth } from "../src/contexts/AuthContext";
 import { useCart } from "../src/contexts/CartContext";
 import { useNav } from "../src/contexts/NavContext";
 import {
-    addressService,
-    orderService,
-    paymentService,
+  addressService,
+  orderService,
+  paymentService,
 } from "../src/services/api";
 import { database } from "../src/services/database";
 
@@ -171,7 +171,7 @@ export default function CheckoutPage() {
             localDate,
           ],
         );
-      } catch (localErr) {}
+      } catch (localErr) { }
 
       const checkoutUrl = paymentResponse.init_point;
       if (checkoutUrl) {
@@ -252,7 +252,7 @@ export default function CheckoutPage() {
                   style={[
                     styles.addressCard,
                     selectedAddress?.id_endereco === item.id_endereco &&
-                      styles.addressCardSelected,
+                    styles.addressCardSelected,
                   ]}
                   onPress={() => setSelectedAddress(item)}
                 >
@@ -569,9 +569,7 @@ export default function CheckoutPage() {
           user={user}
           addressData={addressToEdit}
           onSave={() => {
-            loadAddress();
-            setAddressToEdit(null);
-            setShowAddAddress(false);
+            loadAddress(); 
           }}
         />
       </Modal>
