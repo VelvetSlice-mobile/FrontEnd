@@ -1,14 +1,14 @@
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import { Button } from "../src/components/Button";
@@ -35,9 +35,19 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      router.replace("/");
+
+      console.log("Tentando logar com:", email.trim().toLowerCase());
+
+      if (email.trim().toLowerCase() === "admin@velvetslice.com") {
+        router.replace("/admin/dashboard"); 
+      } else {
+        console.log("Redirecionando para a Home Cliente...");
+        router.replace("/(tabs)/home"); 
+      }
+
     } catch (error) {
-      Alert.alert("Erro", "Falha na autenticação. Verifique suas credenciais.");
+      console.error("Erro no login:", error);
+      Alert.alert("Erro", "Falha na autenticação.");
     } finally {
       setLoading(false);
     }

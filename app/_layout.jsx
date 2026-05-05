@@ -77,7 +77,8 @@ export default function Layout() {
 function NavbarGlobal() {
   const pathname = usePathname();
   const { showNav } = useNav();
-  const hiddenRoutes = ["/login", "/register", "/reset-password"];
+  
+  const hiddenRoutes = ["/login", "/register", "/reset-password", "/admin/dashboard"]; 
   const shouldShowNavbar = showNav && !hiddenRoutes.includes(pathname);
 
   return <Navbar visible={shouldShowNavbar} />;
