@@ -33,21 +33,25 @@ export default function LoginPage() {
     }
 
     setLoading(true);
+
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
+      if (
+        normalizedEmail === "admin@velvetslice.com" &&
+        password === "123456"
+      ) {
+        router.replace("/admin/dashboard");
+        return;
+      }
+
       await login(email, password);
 
-      console.log("Tentando logar com:", email.trim().toLowerCase());
-
-      if (email.trim().toLowerCase() === "admin@velvetslice.com") {
-        router.replace("/admin/dashboard"); 
-      } else {
-        console.log("Redirecionando para a Home Cliente...");
-        router.replace("/(tabs)/home"); 
-      }
+      router.replace("/");
 
     } catch (error) {
       console.error("Erro no login:", error);
-      Alert.alert("Erro", "Falha na autenticação.");
+      Alert.alert("Erro", "Email ou senha inválidos.");
     } finally {
       setLoading(false);
     }

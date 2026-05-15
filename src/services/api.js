@@ -227,15 +227,21 @@ export const authService = {
 export const productService = {
   getAll: async () => {
     try {
-      const response = await fetchWithTimeout("/api/products");
+      const response = await fetchWithTimeout("/api/bolos");
       const data = await response.json();
+
       return data.map((item) => ({
         id: item.id_bolo,
         name: item.nome,
         description: item.descricao,
         price: item.preco,
-        image: item.imagem,
+
+        image:
+          item.imagem && item.imagem.trim() !== ""
+            ? { uri: item.imagem }
+            : require("../assets/images/cake-placeholder.jpg"),
       }));
+
     } catch (error) {
       console.warn("Falha ao carregar produtos:", error?.message);
       return [];
@@ -243,7 +249,7 @@ export const productService = {
   },
 
   create: async (productData) => {
-    const response = await fetchWithTimeout("/api/products", {
+    const response = await fetchWithTimeout("/api/bolos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -258,7 +264,7 @@ export const productService = {
 
   delete: async (productId) => {
     try {
-      const response = await fetchWithTimeout(`/api/products/${productId}`, {
+      const response = await fetchWithTimeout(`/api/bolos/${productId}`, {
         method: "DELETE",
       });
       return response.ok;
