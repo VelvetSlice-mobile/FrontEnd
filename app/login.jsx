@@ -1,37 +1,17 @@
-<<<<<<< Updated upstream
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-=======
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
->>>>>>> Stashed changes
 
 import { Colors } from '../src/constants/Colors';
 import { Fonts } from '../src/constants/Fonts';
 import { FormInput } from '../src/components/FormInput';
 import { Button } from '../src/components/Button';
 
-<<<<<<< Updated upstream
 import { useAuth } from '../src/contexts/AuthContext';
-=======
-import { useAuth } from "../src/contexts/AuthContext";
-import { useToast } from "../src/contexts/ToastContext";
->>>>>>> Stashed changes
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-<<<<<<< Updated upstream
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,45 +20,15 @@ export default function LoginPage() {
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Erro', 'Preencha todos os campos');
-=======
-  const { showToast } = useToast();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleLogin = async () => {
-    if (!email.trim()) {
-      showToast("Informe seu e-mail.", "warning");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      showToast("Informe um e-mail válido.", "warning");
-      return;
-    }
-    if (!password) {
-      showToast("Informe sua senha.", "warning");
->>>>>>> Stashed changes
       return;
     }
     
     setLoading(true);
     try {
-<<<<<<< Updated upstream
       await login(email, password);
       router.replace('/');
     } catch (error) {
       Alert.alert('Erro', 'Falha na autenticação. Verifique suas credenciais.');
-=======
-      const result = await login(email.trim(), password);
-      if (result?.success === false) {
-        showToast(result.message || "Credenciais inválidas.", "error");
-        return;
-      }
-      router.replace(result?.user?.role === "admin" ? "/admin" : "/");
-    } catch {
-      showToast("Falha na conexão. Verifique sua internet.", "error");
->>>>>>> Stashed changes
     } finally {
       setLoading(false);
     }
