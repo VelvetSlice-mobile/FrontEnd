@@ -62,7 +62,7 @@ export default function ProfilePage() {
 
   const handleLogout = () => {
     logout();
-    router.replace('/login');
+    router.replace("/login");
   };
 
   const handleDeleteAccount = () => {
@@ -176,7 +176,7 @@ export default function ProfilePage() {
               <Text style={styles.settingLabel}>{item.label}</Text>
               <View style={styles.settingRight}>
                 <Text style={styles.settingValue}>{item.value}</Text>
-                <ChevronRight size={16} color={Colors.accent || '#D4AF37'} />
+                <ChevronRight size={16} color={Colors.accent || "#D4AF37"} />
               </View>
             </TouchableOpacity>
           ))}

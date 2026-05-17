@@ -13,59 +13,33 @@ import {
 } from "react-native";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
+import { useViaCep } from "../hooks/useViaCep";
 import { addressService } from "../services/api";
 import { Button } from "./Button";
 
-export function AddAddressModal({ onClose, onSave, addressData, user }) {
-  const userId = user?.id ?? user?.id_cliente;
+export function AddAddressModal({ onClose, onSave, user, addressData }) {
+  const { endereco, loading, error, buscarCep, atualizarEndereco } = useViaCep(addressData);
+  const [saving, setSaving] = useState(false);
+  
+  // NOVO: Estado para a referência do endereço
+  const [nomeEndereco, setNomeEndereco] = useState(addressData?.nome_endereco || "");
 
-  const [placeName, setPlaceName] = useState("");
-  const [street, setStreet] = useState("");
-  const [number, setNumber] = useState("");
-  const [cep, setCep] = useState("");
-  const [uf, setUf] = useState("");
-  const [complement, setComplement] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    if (addressData) {
-      setPlaceName(addressData.nome_endereco || "");
-      setStreet(addressData.logradouro || "");
-      setNumber(addressData.numero?.toString() || "");
-      setCep(addressData.CEP || "");
-      setUf(addressData.estado || "");
-      setComplement(addressData.complemento || "");
-    } else {
-      setPlaceName("");
-      setStreet("");
-      setNumber("");
-      setCep("");
-      setUf("");
-      setComplement("");
+  const handleCepChange = (texto) => {
+    atualizarEndereco('cep', texto);
+    if (texto.replace(/\D/g, '').length === 8) {
+      buscarCep(texto);
     }
-  }, [addressData]);
+  };
 
-  const handleAdd = async () => {
-    if (!placeName || !street || !cep) {
-      Alert.alert("Atenção", "Por favor, preencha os campos principais.");
+  const handleSave = async () => {
+    if (saving) return;
+
+    if (!endereco.cep || !endereco.rua || !endereco.numero || !nomeEndereco) {
+      Alert.alert("Atenção", "Preencha a Referência, o CEP e o Número.");
       return;
     }
 
-    if (!userId) {
-      Alert.alert("Erro", "Usuário não identificado para vincular o endereço.");
-      return;
-    }
-
-    const dadosEndereco = {
-      nome_endereco: placeName,
-      logradouro: street,
-      numero: number,
-      CEP: cep,
-      estado: uf,
-      complemento: complement,
-      fk_Cliente_id_cliente: userId,
-    };
-
+    setSaving(true);
     try {
       const payload = {
         fk_Cliente_id_cliente: user?.id ?? user?.id_cliente,
@@ -81,18 +55,15 @@ export function AddAddressModal({ onClose, onSave, addressData, user }) {
       if (isEditing) {
         await addressService.update(addressData.id_endereco, payload);
       } else {
-        const novoEndereco = await addressService.create(dadosEndereco);
-
-        result = novoEndereco;
-        Alert.alert("Sucesso", "Endereço salvo!");
+        await addressService.create(payload);
       }
 
-      if (onSave) onSave(result);
-      if (onClose) onClose();
-    } catch (error) {
-      Alert.alert("Erro", "Não foi possível salvar os dados.");
-    } finally {
-      setIsSaving(false);
+      onClose(); 
+      onSave(); 
+      
+    } catch (err) {
+      Alert.alert("Erro", "Não foi possível salvar o endereço.");
+      setSaving(false);
     }
   };
 

@@ -107,20 +107,21 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        updateUserData
+        updateUserData,
+        updateUserAvatar,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
 AuthProvider.propTypes = { children: PropTypes.node.isRequired };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
   }
   return context;
 };

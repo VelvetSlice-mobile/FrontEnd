@@ -1,7 +1,7 @@
 import {
-  Newsreader_400Regular,
-  Newsreader_700Bold,
-  useFonts,
+    Newsreader_400Regular,
+    Newsreader_700Bold,
+    useFonts,
 } from "@expo-google-fonts/newsreader";
 import { Stack, usePathname, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -12,8 +12,6 @@ import { CartProvider } from "../src/contexts/CartContext";
 import { NavProvider, useNav } from "../src/contexts/NavContext";
 import { ToastProvider } from "../src/contexts/ToastContext";
 import { initDatabase } from "../src/services/database";
-import { NavProvider, useNav } from "../src/contexts/NavContext"; 
-import { Navbar } from "../src/components/Navbar";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -97,6 +95,7 @@ function SessionGuard() {
 }
 
 function NavbarGlobal() {
+  const pathname = usePathname();
   const { showNav } = useNav();
   const hiddenRoutes = ["/login", "/register", "/reset-password"];
   const isAdminRoute = pathname.startsWith("/admin");

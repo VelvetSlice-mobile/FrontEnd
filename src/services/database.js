@@ -1,12 +1,6 @@
-<<<<<<< Updated upstream
 import * as SQLite from 'expo-sqlite';
 
 const db = SQLite.openDatabaseSync('velvetslice.db');
-=======
-import * as SQLite from "expo-sqlite";
-import { Platform } from "react-native";
-
-const db = Platform.OS !== "web" ? SQLite.openDatabaseSync("velvetslice.db") : null;
 
 const normalizeDbUser = (row) => {
   if (!row) return null;
@@ -22,7 +16,6 @@ const normalizeDbUser = (row) => {
     tokenType: row.token_type,
   };
 };
->>>>>>> Stashed changes
 
 export const initDatabase = () => {
   if (!db) return;
@@ -32,9 +25,30 @@ export const initDatabase = () => {
       name TEXT,
       email TEXT UNIQUE,
       password TEXT,
-      phone TEXT
+      phone TEXT,
+      avatar_url TEXT,
+      access_token TEXT,
+      token_type TEXT
     );
   `);
+
+  const userColumns = db.getAllSync("PRAGMA table_info(users)");
+  const hasAvatarColumn = userColumns.some((col) => col.name === "avatar_url");
+  const hasAccessTokenColumn = userColumns.some(
+    (col) => col.name === "access_token",
+  );
+  const hasTokenTypeColumn = userColumns.some(
+    (col) => col.name === "token_type",
+  );
+  if (!hasAvatarColumn) {
+    db.execSync("ALTER TABLE users ADD COLUMN avatar_url TEXT;");
+  }
+  if (!hasAccessTokenColumn) {
+    db.execSync("ALTER TABLE users ADD COLUMN access_token TEXT;");
+  }
+  if (!hasTokenTypeColumn) {
+    db.execSync("ALTER TABLE users ADD COLUMN token_type TEXT;");
+  }
 
   db.execSync(`
     CREATE TABLE IF NOT EXISTS notifications (
@@ -99,18 +113,14 @@ export const initDatabase = () => {
   }
 };
 
-<<<<<<< Updated upstream
-
-export const database = db;
-=======
 export const getPersistedUser = () => {
   if (!db) return null;
+export const getPersistedUser = () => {
   const rows = db.getAllSync("SELECT * FROM users LIMIT 1");
   return rows.length ? normalizeDbUser(rows[0]) : null;
 };
 
 export const saveUser = (user) => {
-  if (!db) return;
   db.runSync(
     "INSERT OR REPLACE INTO users (id, name, email, password, phone, avatar_url, access_token, token_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     [
@@ -132,4 +142,4 @@ export const deleteUser = (email) => {
 };
 
 export const database = db;
->>>>>>> Stashed changes
+

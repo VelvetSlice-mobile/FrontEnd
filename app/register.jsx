@@ -25,12 +25,12 @@ export default function RegisterPage() {
   const { setShowNav } = useNav();
   const { showToast } = useToast();
   const lastOffset = useRef(0);
-  
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useFocusEffect(
@@ -116,13 +116,15 @@ export default function RegisterPage() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.screen} 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
     >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
@@ -141,7 +143,7 @@ export default function RegisterPage() {
 
           <FormInput
             label="Telefone"
-            placeholder="Digite seu telefone"
+            placeholder="+55 (11)9****_****"
             keyboardType="phone-pad"
             value={phone}
             onChangeText={setPhone}
@@ -175,21 +177,23 @@ export default function RegisterPage() {
             onChangeText={setConfirmPassword}
           />
 
-          <TouchableOpacity onPress={() => router.push('/reset-password')}>
+          <TouchableOpacity onPress={() => router.push("/reset-password")}>
             <Text style={styles.forgotText}>
-              Esqueceu senha? Clique <Text style={styles.linkUnderline}>aqui</Text>!
+              Esqueceu senha? Clique{" "}
+              <Text style={styles.linkUnderline}>aqui</Text>!
             </Text>
           </TouchableOpacity>
 
           <Button fullWidth onPress={handleRegister} disabled={loading}>
-            {loading ? 'Cadastrando...' : 'Cadastrar'}
+            {loading ? "Cadastrando..." : "Cadastrar"}
           </Button>
 
           <View style={styles.divider} />
 
-          <TouchableOpacity onPress={() => router.push('/login')}>
+          <TouchableOpacity onPress={() => router.push("/login")}>
             <Text style={styles.registerText}>
-              Já possui uma conta? Entre <Text style={styles.linkUnderline}>aqui</Text>!
+              Já possui uma conta? Entre{" "}
+              <Text style={styles.linkUnderline}>aqui</Text>!
             </Text>
           </TouchableOpacity>
         </View>
@@ -199,13 +203,13 @@ export default function RegisterPage() {
 }
 
 const styles = StyleSheet.create({
-  screen: { 
-    flex: 1, 
-    backgroundColor: Colors.background 
+  screen: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
-  scrollContent: { 
-    flexGrow: 1, 
-    justifyContent: 'center', 
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
     padding: 24,
     paddingBottom: 140,
   },
@@ -214,42 +218,42 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     gap: 16,
-    shadowColor: Colors.primary || '#000',
+    shadowColor: Colors.primary || "#000",
     shadowOpacity: 0.24,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 0 },
     elevation: 8,
   },
-  title: { 
-    fontFamily: Fonts.newsreader, 
-    fontSize: 24, 
-    color: Colors.primary, 
-    textAlign: 'center' 
+  title: {
+    fontFamily: Fonts.newsreader,
+    fontSize: 24,
+    color: Colors.primary,
+    textAlign: "center",
   },
-  subtitle: { 
-    fontFamily: Fonts.poppins, 
-    fontSize: 14, 
-    color: Colors.primary, 
-    textAlign: 'center' 
+  subtitle: {
+    fontFamily: Fonts.poppins,
+    fontSize: 14,
+    color: Colors.primary,
+    textAlign: "center",
   },
-  divider: { 
-    height: 1, 
-    backgroundColor: Colors.secondary || '#ccc', 
-    marginVertical: 4 
+  divider: {
+    height: 1,
+    backgroundColor: Colors.secondary || "#ccc",
+    marginVertical: 4,
   },
-  forgotText: { 
-    fontFamily: Fonts.josefinSans || 'sans-serif', 
-    fontSize: 14, 
-    color: Colors.secondary, 
-    textAlign: 'right' 
+  forgotText: {
+    fontFamily: Fonts.josefinSans || "sans-serif",
+    fontSize: 14,
+    color: Colors.secondary,
+    textAlign: "right",
   },
-  linkUnderline: { 
-    textDecorationLine: 'underline' 
+  linkUnderline: {
+    textDecorationLine: "underline",
   },
-  registerText: { 
-    fontFamily: Fonts.josefinSans || 'sans-serif', 
-    fontSize: 14, 
-    color: Colors.greenText || 'green', 
-    textAlign: 'center' 
+  registerText: {
+    fontFamily: Fonts.josefinSans || "sans-serif",
+    fontSize: 14,
+    color: Colors.greenText || "green",
+    textAlign: "center",
   },
 });
