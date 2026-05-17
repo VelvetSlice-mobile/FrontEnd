@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-import { database } from "./database";
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
-=======
 import { database, saveUser } from "./database";
 const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim();
 const REQUEST_TIMEOUT_MS = 12000;
@@ -121,7 +117,6 @@ const getApiErrorMessage = async (response, fallbackMessage) => {
 
   return errorData?.error || errorData?.message || fallbackMessage;
 };
->>>>>>> Stashed changes
 
 export const authService = {
   register: async (userData) => {
