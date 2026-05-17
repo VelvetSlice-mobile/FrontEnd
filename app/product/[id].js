@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Star } from 'lucide-react-native';
 import { products } from '../../src/data/products';
@@ -10,23 +10,22 @@ import { Button } from '../../src/components/Button';
 import { Navbar } from '../../src/components/Navbar';
 
 export default function ProductDetailPage() {
-  const { id } = useLocalSearchParams();
+  const { id, from } = useLocalSearchParams();
   const router = useRouter();
   const { addToCart } = useCart();
-  
+
   const [selectedWeight, setSelectedWeight] = useState('1Kg');
   const product = products.find((p) => p.id === id);
 
   if (!product) return <View style={styles.container}><Text>Produto não encontrado</Text></View>;
 
   const weights = ['1Kg', '2Kg', '3Kg', '4Kg', '5Kg'];
-  const weightMultiplier = parseInt(selectedWeight);
+  const weightMultiplier = Number.parseInt(selectedWeight);
   const totalPrice = product.price * weightMultiplier;
 
   const handleAddToCart = () => {
     addToCart(product, selectedWeight, 1);
-    Alert.alert('Sucesso', 'Adicionado ao carrinho!');
-    router.push('/cart');
+    router.replace(from === 'checkout' ? '/checkout' : '/cart');
   };
 
   return (

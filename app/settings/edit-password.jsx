@@ -1,16 +1,19 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
 import { FormInput } from '../../src/components/FormInput';
-import { Navbar } from '../../src/components/Navbar';
 import { Colors } from '../../src/constants/Colors';
 import { Fonts } from '../../src/constants/Fonts';
-import { useAuth } from '../../src/contexts/AuthContext'; // Importado
+import { useAuth } from '../../src/contexts/AuthContext';
+import { useToast } from '../../src/contexts/ToastContext';
+import { authService } from '../../src/services/api';
+import { saveUser } from '../../src/services/database';
 
 export default function EditPasswordPage() {
   const router = useRouter();
-  const { updateUserData } = useAuth(); // Hook de autenticação
+  const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -18,41 +21,40 @@ export default function EditPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
-    // 1. Validação de campos vazios
     if (!currentPassword || !newPassword || !confirmPassword) {
-      return Alert.alert('Erro', 'Preencha todos os campos.');
+      return showToast('Preencha todos os campos.', 'error');
     }
 
-    // 2. Validação de tamanho mínimo
     if (newPassword.length < 6) {
-      return Alert.alert('Erro', 'A nova senha deve ter no mínimo 6 caracteres.');
+      return showToast('A nova senha deve ter no mínimo 6 caracteres.', 'error');
     }
 
-    // 3. Validação de coincidência
     if (newPassword !== confirmPassword) {
-      return Alert.alert('Erro', 'A nova senha e a confirmação não coincidem.');
+      return showToast('A nova senha e a confirmação não coincidem.', 'error');
     }
 
-    // 4. Validação de senha nova igual à antiga 
     if (newPassword === currentPassword) {
-      return Alert.alert('Aviso', 'A nova senha não pode ser igual à senha atual.');
+      return showToast('A nova senha não pode ser igual à senha atual.', 'warning');
+    }
+
+    const userId = user?.id ?? user?.id_cliente;
+    if (!userId) {
+      return showToast('Usuário não identificado. Faça login novamente.', 'error');
     }
 
     try {
       setLoading(true);
+      await authService.updatePassword(userId, {
+        senhaAtual: currentPassword,
+        novaSenha: newPassword,
+      });
 
-      // Chamando o motor de atualização
-      const result = await updateUserData({ password: newPassword });
+      saveUser({ ...user, password: newPassword });
 
-      if (result.success) {
-        Alert.alert('Sucesso', 'Senha alterada com sucesso!', [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
-      } else {
-        Alert.alert('Erro', result.message || 'Falha ao atualizar senha.');
-      }
+      showToast('Senha alterada com sucesso!', 'success');
+      router.back();
     } catch (error) {
-      Alert.alert('Erro', 'Ocorreu um erro inesperado.');
+      showToast(error.message || 'Falha ao alterar senha.', 'error');
     } finally {
       setLoading(false);
     }
@@ -69,7 +71,7 @@ export default function EditPasswordPage() {
         <FormInput
           label="Senha atual"
           placeholder="••••••••••••"
-          secureTextEntry={true} // Garante que a senha fique oculta
+          secureTextEntry
           value={currentPassword}
           onChangeText={setCurrentPassword}
         />
@@ -77,7 +79,7 @@ export default function EditPasswordPage() {
         <FormInput
           label="Nova senha"
           placeholder="••••••••••••"
-          secureTextEntry={true}
+          secureTextEntry
           value={newPassword}
           onChangeText={setNewPassword}
         />
@@ -85,24 +87,15 @@ export default function EditPasswordPage() {
         <FormInput
           label="Confirmar nova senha"
           placeholder="••••••••••••"
-          secureTextEntry={true}
+          secureTextEntry
           value={confirmPassword}
           onChangeText={setConfirmPassword}
         />
 
-        <TouchableOpacity onPress={() => Alert.alert('Recuperação', 'Link de redefinição enviado ao seu e-mail.')}>
-          <Text style={styles.forgotText}>Esqueceu senha?</Text>
-        </TouchableOpacity>
-
-        <Button
-          fullWidth
-          onPress={handleSave}
-          loading={loading} // Adicionado feedback visual de carregamento
-        >
+        <Button fullWidth onPress={handleSave} loading={loading}>
           Alterar senha
         </Button>
       </View>
-      <Navbar />
     </View>
   );
 }
@@ -116,14 +109,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.primary || '#4F2C1D',
     opacity: 0.8,
-    marginBottom: 5
-  },
-  forgotText: {
-    fontFamily: Fonts.poppins || 'System',
-    fontSize: 14,
-    color: Colors.primary || '#4F2C1D',
-    textAlign: 'right',
-    textDecorationLine: 'underline',
-    marginBottom: 10
+    marginBottom: 5,
   },
 });

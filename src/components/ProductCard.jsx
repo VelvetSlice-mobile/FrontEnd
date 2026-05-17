@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -8,15 +9,17 @@ import { Fonts } from '../constants/Fonts';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 55) / 2;
-export function ProductCard({ product }) {
+export function ProductCard({ product, from }) {
   const router = useRouter();
 
   if (!product) return null;
 
+  const href = from ? `/product/${product.id}?from=${from}` : `/product/${product.id}`;
+
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => router.push(`/product/${product.id}`)}
+      onPress={() => router.push(href)}
       activeOpacity={0.8}
     >
       <Image 
@@ -45,6 +48,18 @@ export function ProductCard({ product }) {
     </TouchableOpacity>
   );
 }
+
+ProductCard.propTypes = {
+  product: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    name: PropTypes.string,
+    price: PropTypes.number,
+    rating: PropTypes.number,
+    image: PropTypes.oneOfType([PropTypes.number, PropTypes.object]),
+    category: PropTypes.string,
+  }).isRequired,
+  from: PropTypes.string,
+};
 
 const styles = StyleSheet.create({
   card: {
