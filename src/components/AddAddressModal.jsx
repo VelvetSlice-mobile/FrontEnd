@@ -1,8 +1,3 @@
-<<<<<<< Updated upstream
-import React, { useState, useEffect } from "react";
-import {
-  Alert,
-=======
 import PropTypes from "prop-types";
 import React, { useRef, useState } from "react";
 import {
@@ -10,12 +5,10 @@ import {
   KeyboardAvoidingView,
   PanResponder,
   Platform,
->>>>>>> Stashed changes
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-<<<<<<< Updated upstream
   View,
 } from "react-native";
 import { Colors } from "../constants/Colors";
@@ -57,48 +50,6 @@ export function AddAddressModal({ onClose, onSave, addressData, user }) {
       Alert.alert("Atenção", "Por favor, preencha os campos principais.");
       return;
     }
-=======
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { Trash2 } from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Colors } from "../constants/Colors";
-import { Fonts } from "../constants/Fonts";
-import { useToast } from "../contexts/ToastContext";
-import { useViaCep } from "../hooks/useViaCep";
-import { addressService } from "../services/api";
-import { Button } from "./Button";
-
-export function AddAddressModal({ onClose, onSave, onDelete, user, addressData }) {
-  const { endereco, loading, error, buscarCep, atualizarEndereco } = useViaCep(addressData);
-  const { showToast } = useToast();
-  const insets = useSafeAreaInsets();
-  const [saving, setSaving] = useState(false);
-  const [nomeEndereco, setNomeEndereco] = useState(addressData?.nome_endereco || "");
-
-  const isEditing = !!addressData?.id_endereco;
-  let saveLabel = isEditing ? "Salvar alterações" : "Adicionar endereço";
-  if (saving) saveLabel = "Salvando...";
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => g.dy > 8 && Math.abs(g.dy) > Math.abs(g.dx),
-      onPanResponderRelease: (_, g) => { if (g.dy > 60) onClose(); },
-    })
-  ).current;
-
-  const handleCepChange = (texto) => {
-    atualizarEndereco("cep", texto);
-    if (texto.replace(/\D/g, "").length === 8) buscarCep(texto);
-  };
-
-  const handleSave = async () => {
-    if (saving) return;
-    if (!nomeEndereco.trim()) { showToast("Informe uma referência (Ex: Casa, Trabalho).", "warning"); return; }
-    if (!endereco.cep || endereco.cep.replace(/\D/g, "").length < 8) { showToast("Informe um CEP válido.", "warning"); return; }
-    if (!endereco.numero?.trim()) { showToast("Informe o número do endereço.", "warning"); return; }
->>>>>>> Stashed changes
 
     if (!userId) {
       Alert.alert("Erro", "Usuário não identificado para vincular o endereço.");
@@ -116,17 +67,6 @@ export function AddAddressModal({ onClose, onSave, onDelete, user, addressData }
     };
 
     try {
-<<<<<<< Updated upstream
-      setIsSaving(true);
-      let result;
-
-      if (addressData?.id_endereco) {
-        result = await addressService.update(
-          addressData.id_endereco,
-          dadosEndereco,
-        );
-        Alert.alert("Sucesso", "Endereço atualizado!");
-=======
       const payload = {
         fk_Cliente_id_cliente: user?.id ?? user?.id_cliente,
         CEP: endereco.cep,
@@ -140,14 +80,12 @@ export function AddAddressModal({ onClose, onSave, onDelete, user, addressData }
       };
       if (isEditing) {
         await addressService.update(addressData.id_endereco, payload);
->>>>>>> Stashed changes
       } else {
         const novoEndereco = await addressService.create(dadosEndereco);
 
         result = novoEndereco;
         Alert.alert("Sucesso", "Endereço salvo!");
       }
-<<<<<<< Updated upstream
 
       if (onSave) onSave(result);
       if (onClose) onClose();
@@ -155,82 +93,10 @@ export function AddAddressModal({ onClose, onSave, onDelete, user, addressData }
       Alert.alert("Erro", "Não foi possível salvar os dados.");
     } finally {
       setIsSaving(false);
-=======
-      onSave();
-      onClose();
-    } catch {
-      showToast("Não foi possível salvar o endereço.", "error");
-      setSaving(false);
->>>>>>> Stashed changes
     }
   };
 
   return (
-<<<<<<< Updated upstream
-    <View style={styles.overlay}>
-      <View style={styles.modal}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <Text style={styles.title}>
-            {addressData ? "Editar endereço" : "Adicionar endereço"}
-          </Text>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Nome do lugar (Ex: Casa, Trabalho)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Dê um nome ao lugar"
-              value={placeName}
-              onChangeText={setPlaceName}
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Logradouro</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Rua, Avenida, etc."
-              value={street}
-              onChangeText={setStreet}
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <View style={styles.row}>
-            <View style={[styles.fieldGroup, { flex: 1 }]}>
-              <Text style={styles.label}>Nº</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="123"
-                value={number}
-                onChangeText={setNumber}
-                keyboardType="numeric"
-                placeholderTextColor="#999"
-              />
-            </View>
-            <View style={[styles.fieldGroup, { flex: 2 }]}>
-              <Text style={styles.label}>CEP</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="00000-000"
-                value={cep}
-                onChangeText={setCep}
-                keyboardType="numeric"
-                maxLength={9}
-                placeholderTextColor="#999"
-              />
-            </View>
-            <View style={[styles.fieldGroup, { flex: 1 }]}>
-              <Text style={styles.label}>UF</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="SP"
-                value={uf}
-                onChangeText={setUf}
-                autoCapitalize="characters"
-                maxLength={2}
-                placeholderTextColor="#999"
-=======
     <KeyboardAvoidingView
       style={styles.overlay}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -336,37 +202,10 @@ export function AddAddressModal({ onClose, onSave, onDelete, user, addressData }
                 placeholderTextColor={Colors.secondary}
                 value={endereco.estado}
                 editable={false}
->>>>>>> Stashed changes
               />
             </View>
           </View>
 
-<<<<<<< Updated upstream
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Complemento</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Apto, Bloco, etc."
-              value={complement}
-              onChangeText={setComplement}
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <View style={styles.buttonRow}>
-            <Button
-              variant="outline"
-              onPress={onClose}
-              style={styles.cancelButton}
-              disabled={isSaving}
-            >
-              Cancelar
-            </Button>
-            <Button onPress={handleAdd} style={{ flex: 2 }} loading={isSaving}>
-              {addressData ? "Salvar alterações" : "Adicionar"}
-            </Button>
-          </View>
-=======
           <Button fullWidth onPress={handleSave} style={{ marginTop: 16 }} disabled={saving}>
             {saveLabel}
           </Button>
@@ -381,7 +220,6 @@ export function AddAddressModal({ onClose, onSave, onDelete, user, addressData }
               <Text style={styles.cancelText}>Cancelar</Text>
             </TouchableOpacity>
           )}
->>>>>>> Stashed changes
         </ScrollView>
       </View>
     </KeyboardAvoidingView>
@@ -400,68 +238,6 @@ AddAddressModal.propTypes = {
 };
 
 const styles = StyleSheet.create({
-<<<<<<< Updated upstream
-  overlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modal: {
-    backgroundColor: Colors.background || "#FFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 25,
-    maxHeight: "85%",
-    elevation: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-  },
-  title: {
-    fontFamily: Fonts.newsreader,
-    fontSize: 24,
-    color: Colors.primary,
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  fieldGroup: {
-    marginBottom: 16,
-    gap: 6,
-  },
-  label: {
-    fontFamily: Fonts.poppins,
-    fontSize: 14,
-    color: Colors.primary,
-  },
-  input: {
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    height: 48,
-    fontFamily: Fonts.poppins,
-    fontSize: 14,
-    color: Colors.primary,
-  },
-  row: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: "transparent",
-    elevation: 0,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-  },
-=======
   overlay: { flex: 1, justifyContent: "flex-end" },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.55)" },
   sheet: {
@@ -496,5 +272,4 @@ const styles = StyleSheet.create({
   deleteText: { fontFamily: Fonts.poppins, fontSize: 14, color: Colors.accent, textDecorationLine: "underline" },
   cancelBtn: { marginTop: 2, paddingVertical: 8, alignItems: "center" },
   cancelText: { fontFamily: Fonts.poppins, fontSize: 14, color: Colors.secondary },
->>>>>>> Stashed changes
 });

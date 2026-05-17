@@ -87,8 +87,6 @@ export default function OrdersPage() {
       } else {
         setOrders(localOrders);
       }
-<<<<<<< Updated upstream
-=======
 
       const STATUS_NOTIFICATIONS = {
         in_transit: { title: "Pedido em rota!", message: "Seu pedido saiu para entrega." },
@@ -135,7 +133,6 @@ export default function OrdersPage() {
 
       merged.sort((a, b) => (b.id || 0) - (a.id || 0));
       setOrders(merged);
->>>>>>> Stashed changes
     } catch (error) {
       console.error("Erro ao carregar pedidos:", error);
     }

@@ -3,13 +3,6 @@ import {
   Newsreader_700Bold,
   useFonts,
 } from "@expo-google-fonts/newsreader";
-<<<<<<< Updated upstream
-import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
-import { AuthProvider } from "../src/contexts/AuthContext";
-import { CartProvider } from "../src/contexts/CartContext";
-=======
 import { Stack, usePathname, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
@@ -18,7 +11,6 @@ import { AuthProvider, useAuth } from "../src/contexts/AuthContext";
 import { CartProvider } from "../src/contexts/CartContext";
 import { NavProvider, useNav } from "../src/contexts/NavContext";
 import { ToastProvider } from "../src/contexts/ToastContext";
->>>>>>> Stashed changes
 import { initDatabase } from "../src/services/database";
 import { NavProvider, useNav } from "../src/contexts/NavContext"; 
 import { Navbar } from "../src/components/Navbar";
@@ -35,10 +27,7 @@ export default function Layout() {
     try {
       initDatabase();
     } catch (error) {
-<<<<<<< Updated upstream
-=======
       console.error("Erro ao inicializar banco local:", error);
->>>>>>> Stashed changes
     }
   }, []);
 
@@ -109,13 +98,9 @@ function SessionGuard() {
 
 function NavbarGlobal() {
   const { showNav } = useNav();
-<<<<<<< Updated upstream
-  return <Navbar visible={showNav} />;
-=======
   const hiddenRoutes = ["/login", "/register", "/reset-password"];
   const isAdminRoute = pathname.startsWith("/admin");
   const shouldShowNavbar = showNav && !hiddenRoutes.includes(pathname) && !isAdminRoute;
 
   return <Navbar visible={shouldShowNavbar} />;
->>>>>>> Stashed changes
 }

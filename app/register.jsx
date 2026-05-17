@@ -1,16 +1,3 @@
-<<<<<<< Updated upstream
-import React, { useCallback, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
-
-import { Colors } from '../src/constants/Colors';
-import { Fonts } from '../src/constants/Fonts';
-import { FormInput } from '../src/components/FormInput';
-import { Button } from '../src/components/Button';
-import { useAuth } from '../src/contexts/AuthContext';
-import { useNav } from '../src/contexts/NavContext';
-=======
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
@@ -31,7 +18,6 @@ import { Fonts } from "../src/constants/Fonts";
 import { useAuth } from "../src/contexts/AuthContext";
 import { useNav } from "../src/contexts/NavContext";
 import { useToast } from "../src/contexts/ToastContext";
->>>>>>> Stashed changes
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -72,10 +58,6 @@ export default function RegisterPage() {
   };
 
   const handleRegister = async () => {
-<<<<<<< Updated upstream
-    if (!name || !phone || !email || !password || !confirmPassword) {
-      Alert.alert('Erro', 'Preencha todos os campos');
-=======
     if (!name.trim()) {
       showToast("Informe seu nome.", "warning");
       return;
@@ -110,15 +92,10 @@ export default function RegisterPage() {
     }
     if (!confirmPassword) {
       showToast("Confirme sua senha.", "warning");
->>>>>>> Stashed changes
       return;
     }
     if (password !== confirmPassword) {
-<<<<<<< Updated upstream
-      Alert.alert('Erro', 'As senhas não coincidem');
-=======
       showToast("As senhas não coincidem.", "error");
->>>>>>> Stashed changes
       return;
     }
 
@@ -126,16 +103,6 @@ export default function RegisterPage() {
     try {
       const result = await register({ name: name.trim(), email: email.trim(), password, phone: phone.trim() });
       if (result.success) {
-<<<<<<< Updated upstream
-        Alert.alert('Sucesso', 'Conta criada com sucesso!', [
-          { text: 'OK', onPress: () => router.replace('/login') },
-        ]);
-      } else {
-        Alert.alert('Erro', result.message || 'Erro ao registrar');
-      }
-    } catch (error) {
-      Alert.alert('Erro', 'Erro inesperado ao registrar');
-=======
         showToast("Conta criada com sucesso!", "success");
         router.replace("/");
       } else {
@@ -143,7 +110,6 @@ export default function RegisterPage() {
       }
     } catch {
       showToast("Erro inesperado ao registrar.", "error");
->>>>>>> Stashed changes
     } finally {
       setLoading(false);
     }
@@ -209,15 +175,12 @@ export default function RegisterPage() {
             onChangeText={setConfirmPassword}
           />
 
-<<<<<<< Updated upstream
           <TouchableOpacity onPress={() => router.push('/reset-password')}>
             <Text style={styles.forgotText}>
               Esqueceu senha? Clique <Text style={styles.linkUnderline}>aqui</Text>!
             </Text>
           </TouchableOpacity>
 
-=======
->>>>>>> Stashed changes
           <Button fullWidth onPress={handleRegister} disabled={loading}>
             {loading ? 'Cadastrando...' : 'Cadastrar'}
           </Button>
