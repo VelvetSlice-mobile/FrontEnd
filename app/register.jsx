@@ -1,8 +1,20 @@
+<<<<<<< Updated upstream
+import React, { useCallback, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+
+import { Colors } from '../src/constants/Colors';
+import { Fonts } from '../src/constants/Fonts';
+import { FormInput } from '../src/components/FormInput';
+import { Button } from '../src/components/Button';
+import { useAuth } from '../src/contexts/AuthContext';
+import { useNav } from '../src/contexts/NavContext';
+=======
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -18,18 +30,21 @@ import { Colors } from "../src/constants/Colors";
 import { Fonts } from "../src/constants/Fonts";
 import { useAuth } from "../src/contexts/AuthContext";
 import { useNav } from "../src/contexts/NavContext";
+import { useToast } from "../src/contexts/ToastContext";
+>>>>>>> Stashed changes
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
   const { setShowNav } = useNav();
+  const { showToast } = useToast();
   const lastOffset = useRef(0);
-
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   useFocusEffect(
@@ -57,43 +72,91 @@ export default function RegisterPage() {
   };
 
   const handleRegister = async () => {
+<<<<<<< Updated upstream
     if (!name || !phone || !email || !password || !confirmPassword) {
-      Alert.alert("Erro", "Preencha todos os campos");
+      Alert.alert('Erro', 'Preencha todos os campos');
+=======
+    if (!name.trim()) {
+      showToast("Informe seu nome.", "warning");
       return;
     }
-
+    if (name.trim().length < 2) {
+      showToast("Nome deve ter pelo menos 2 caracteres.", "warning");
+      return;
+    }
+    if (!phone.trim()) {
+      showToast("Informe seu telefone.", "warning");
+      return;
+    }
+    if (phone.replace(/\D/g, "").length < 10) {
+      showToast("Telefone inválido. Use DDD + número.", "warning");
+      return;
+    }
+    if (!email.trim()) {
+      showToast("Informe seu e-mail.", "warning");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      showToast("Informe um e-mail válido.", "warning");
+      return;
+    }
+    if (!password) {
+      showToast("Informe uma senha.", "warning");
+      return;
+    }
+    if (password.length < 6) {
+      showToast("A senha deve ter pelo menos 6 caracteres.", "warning");
+      return;
+    }
+    if (!confirmPassword) {
+      showToast("Confirme sua senha.", "warning");
+>>>>>>> Stashed changes
+      return;
+    }
     if (password !== confirmPassword) {
-      Alert.alert("Erro", "As senhas não coincidem");
+<<<<<<< Updated upstream
+      Alert.alert('Erro', 'As senhas não coincidem');
+=======
+      showToast("As senhas não coincidem.", "error");
+>>>>>>> Stashed changes
       return;
     }
 
     setLoading(true);
     try {
-      const result = await register({ name, email, password, phone });
+      const result = await register({ name: name.trim(), email: email.trim(), password, phone: phone.trim() });
       if (result.success) {
-        Alert.alert("Sucesso", "Conta criada com sucesso!", [
-          { text: "OK", onPress: () => router.replace("/") },
+<<<<<<< Updated upstream
+        Alert.alert('Sucesso', 'Conta criada com sucesso!', [
+          { text: 'OK', onPress: () => router.replace('/login') },
         ]);
       } else {
-        Alert.alert("Erro", result.message || "Erro ao registrar");
+        Alert.alert('Erro', result.message || 'Erro ao registrar');
       }
     } catch (error) {
-      Alert.alert("Erro", "Erro inesperado ao registrar");
+      Alert.alert('Erro', 'Erro inesperado ao registrar');
+=======
+        showToast("Conta criada com sucesso!", "success");
+        router.replace("/");
+      } else {
+        showToast(result.message || "Erro ao registrar.", "error");
+      }
+    } catch {
+      showToast("Erro inesperado ao registrar.", "error");
+>>>>>>> Stashed changes
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={0}
+    <KeyboardAvoidingView 
+      style={styles.screen} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
@@ -112,7 +175,7 @@ export default function RegisterPage() {
 
           <FormInput
             label="Telefone"
-            placeholder="+55 (11)9****_****"
+            placeholder="Digite seu telefone"
             keyboardType="phone-pad"
             value={phone}
             onChangeText={setPhone}
@@ -146,23 +209,24 @@ export default function RegisterPage() {
             onChangeText={setConfirmPassword}
           />
 
-          <TouchableOpacity onPress={() => router.push("/reset-password")}>
+<<<<<<< Updated upstream
+          <TouchableOpacity onPress={() => router.push('/reset-password')}>
             <Text style={styles.forgotText}>
-              Esqueceu senha? Clique{" "}
-              <Text style={styles.linkUnderline}>aqui</Text>!
+              Esqueceu senha? Clique <Text style={styles.linkUnderline}>aqui</Text>!
             </Text>
           </TouchableOpacity>
 
+=======
+>>>>>>> Stashed changes
           <Button fullWidth onPress={handleRegister} disabled={loading}>
-            {loading ? "Cadastrando..." : "Cadastrar"}
+            {loading ? 'Cadastrando...' : 'Cadastrar'}
           </Button>
 
           <View style={styles.divider} />
 
-          <TouchableOpacity onPress={() => router.push("/login")}>
+          <TouchableOpacity onPress={() => router.push('/login')}>
             <Text style={styles.registerText}>
-              Já possui uma conta? Entre{" "}
-              <Text style={styles.linkUnderline}>aqui</Text>!
+              Já possui uma conta? Entre <Text style={styles.linkUnderline}>aqui</Text>!
             </Text>
           </TouchableOpacity>
         </View>
@@ -172,13 +236,13 @@ export default function RegisterPage() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: Colors.background,
+  screen: { 
+    flex: 1, 
+    backgroundColor: Colors.background 
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
+  scrollContent: { 
+    flexGrow: 1, 
+    justifyContent: 'center', 
     padding: 24,
     paddingBottom: 140,
   },
@@ -187,42 +251,42 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     gap: 16,
-    shadowColor: Colors.primary || "#000",
+    shadowColor: Colors.primary || '#000',
     shadowOpacity: 0.24,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 0 },
     elevation: 8,
   },
-  title: {
-    fontFamily: Fonts.newsreader,
-    fontSize: 24,
-    color: Colors.primary,
-    textAlign: "center",
+  title: { 
+    fontFamily: Fonts.newsreader, 
+    fontSize: 24, 
+    color: Colors.primary, 
+    textAlign: 'center' 
   },
-  subtitle: {
-    fontFamily: Fonts.poppins,
-    fontSize: 14,
-    color: Colors.primary,
-    textAlign: "center",
+  subtitle: { 
+    fontFamily: Fonts.poppins, 
+    fontSize: 14, 
+    color: Colors.primary, 
+    textAlign: 'center' 
   },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.secondary || "#ccc",
-    marginVertical: 4,
+  divider: { 
+    height: 1, 
+    backgroundColor: Colors.secondary || '#ccc', 
+    marginVertical: 4 
   },
-  forgotText: {
-    fontFamily: Fonts.josefinSans || "sans-serif",
-    fontSize: 14,
-    color: Colors.secondary,
-    textAlign: "right",
+  forgotText: { 
+    fontFamily: Fonts.josefinSans || 'sans-serif', 
+    fontSize: 14, 
+    color: Colors.secondary, 
+    textAlign: 'right' 
   },
-  linkUnderline: {
-    textDecorationLine: "underline",
+  linkUnderline: { 
+    textDecorationLine: 'underline' 
   },
-  registerText: {
-    fontFamily: Fonts.josefinSans || "sans-serif",
-    fontSize: 14,
-    color: Colors.greenText || "green",
-    textAlign: "center",
+  registerText: { 
+    fontFamily: Fonts.josefinSans || 'sans-serif', 
+    fontSize: 14, 
+    color: Colors.greenText || 'green', 
+    textAlign: 'center' 
   },
 });
