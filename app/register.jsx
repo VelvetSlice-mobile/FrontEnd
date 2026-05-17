@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import React, { useCallback, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -9,11 +10,34 @@ import { FormInput } from '../src/components/FormInput';
 import { Button } from '../src/components/Button';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useNav } from '../src/contexts/NavContext';
+=======
+import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import React, { useCallback, useRef, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import { Button } from "../src/components/Button";
+import { FormInput } from "../src/components/FormInput";
+import { Colors } from "../src/constants/Colors";
+import { Fonts } from "../src/constants/Fonts";
+import { useAuth } from "../src/contexts/AuthContext";
+import { useNav } from "../src/contexts/NavContext";
+import { useToast } from "../src/contexts/ToastContext";
+>>>>>>> Stashed changes
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
   const { setShowNav } = useNav();
+  const { showToast } = useToast();
   const lastOffset = useRef(0);
   
   const [name, setName] = useState('');
@@ -48,20 +72,61 @@ export default function RegisterPage() {
   };
 
   const handleRegister = async () => {
+<<<<<<< Updated upstream
     if (!name || !phone || !email || !password || !confirmPassword) {
       Alert.alert('Erro', 'Preencha todos os campos');
+=======
+    if (!name.trim()) {
+      showToast("Informe seu nome.", "warning");
       return;
     }
-
+    if (name.trim().length < 2) {
+      showToast("Nome deve ter pelo menos 2 caracteres.", "warning");
+      return;
+    }
+    if (!phone.trim()) {
+      showToast("Informe seu telefone.", "warning");
+      return;
+    }
+    if (phone.replace(/\D/g, "").length < 10) {
+      showToast("Telefone inválido. Use DDD + número.", "warning");
+      return;
+    }
+    if (!email.trim()) {
+      showToast("Informe seu e-mail.", "warning");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      showToast("Informe um e-mail válido.", "warning");
+      return;
+    }
+    if (!password) {
+      showToast("Informe uma senha.", "warning");
+      return;
+    }
+    if (password.length < 6) {
+      showToast("A senha deve ter pelo menos 6 caracteres.", "warning");
+      return;
+    }
+    if (!confirmPassword) {
+      showToast("Confirme sua senha.", "warning");
+>>>>>>> Stashed changes
+      return;
+    }
     if (password !== confirmPassword) {
+<<<<<<< Updated upstream
       Alert.alert('Erro', 'As senhas não coincidem');
+=======
+      showToast("As senhas não coincidem.", "error");
+>>>>>>> Stashed changes
       return;
     }
 
     setLoading(true);
     try {
-      const result = await register({ name, email, password, phone });
+      const result = await register({ name: name.trim(), email: email.trim(), password, phone: phone.trim() });
       if (result.success) {
+<<<<<<< Updated upstream
         Alert.alert('Sucesso', 'Conta criada com sucesso!', [
           { text: 'OK', onPress: () => router.replace('/login') },
         ]);
@@ -70,6 +135,15 @@ export default function RegisterPage() {
       }
     } catch (error) {
       Alert.alert('Erro', 'Erro inesperado ao registrar');
+=======
+        showToast("Conta criada com sucesso!", "success");
+        router.replace("/");
+      } else {
+        showToast(result.message || "Erro ao registrar.", "error");
+      }
+    } catch {
+      showToast("Erro inesperado ao registrar.", "error");
+>>>>>>> Stashed changes
     } finally {
       setLoading(false);
     }
@@ -135,12 +209,15 @@ export default function RegisterPage() {
             onChangeText={setConfirmPassword}
           />
 
+<<<<<<< Updated upstream
           <TouchableOpacity onPress={() => router.push('/reset-password')}>
             <Text style={styles.forgotText}>
               Esqueceu senha? Clique <Text style={styles.linkUnderline}>aqui</Text>!
             </Text>
           </TouchableOpacity>
 
+=======
+>>>>>>> Stashed changes
           <Button fullWidth onPress={handleRegister} disabled={loading}>
             {loading ? 'Cadastrando...' : 'Cadastrar'}
           </Button>

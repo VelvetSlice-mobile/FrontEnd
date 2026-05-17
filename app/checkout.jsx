@@ -4,7 +4,6 @@ import React, {
   useRef,
 } from "react";
 import {
-  Alert,
   Image,
   Modal,
   ScrollView,
@@ -14,6 +13,7 @@ import {
   View,
   Linking,
 } from "react-native";
+<<<<<<< Updated upstream
 import { useRouter } from "expo-router";
 import * as ExpoLinking from "expo-linking";
 import {
@@ -28,6 +28,23 @@ import {
 } from "lucide-react-native";
 import { useAuth } from "../src/contexts/AuthContext";
 import { useCart } from "../src/contexts/CartContext";
+=======
+import { AddAddressModal } from "../src/components/AddAddressModal";
+import { Button } from "../src/components/Button";
+import { ConfirmDialog } from "../src/components/ConfirmDialog";
+import { Header } from "../src/components/Header";
+import { Colors } from "../src/constants/Colors";
+import { Fonts } from "../src/constants/Fonts";
+import { useAuth } from "../src/contexts/AuthContext";
+import { useCart } from "../src/contexts/CartContext";
+import { useNav } from "../src/contexts/NavContext";
+import { useToast } from "../src/contexts/ToastContext";
+import {
+  addressService,
+  orderService,
+  paymentService,
+} from "../src/services/api";
+>>>>>>> Stashed changes
 import { database } from "../src/services/database";
 import { addressService, orderService, paymentService } from "../src/services/api";
 import { Header } from "../src/components/Header";
@@ -42,6 +59,7 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const userId = user?.id ?? user?.id_cliente;
 
+<<<<<<< Updated upstream
   const {
     items: cart,
     total: totalValue,
@@ -56,21 +74,49 @@ export default function CheckoutPage() {
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [itemToEdit, setItemToEdit] = useState(null);
     const [showEditItem, setShowEditItem] = useState(false);
+=======
+  const { items: cart, total: totalValue, removeFromCart, appliedCoupon, clearCart } = useCart();
+  const { showToast } = useToast();
+
+  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [addressToEdit, setAddressToEdit] = useState(null);
+  const [loadingAddress, setLoadingAddress] = useState(true);
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [itemToEdit, setItemToEdit] = useState(null);
+  const [showEditItem, setShowEditItem] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState(null);
+>>>>>>> Stashed changes
   const { updateItem } = useCart();
     const [itemOriginal, setItemOriginal] = useState(null);
 
+<<<<<<< Updated upstream
     const shipping = 80.0;
     const discount = 20.0;
     const grandTotal = totalValue + shipping - discount;
+=======
+  const calcularFrete = (address) => {
+    if (!address?.estado) return 0;
+    const uf = address.estado.toUpperCase().trim();
+    if (uf === "SP") return 20.0;
+    if (["RJ", "MG", "PR", "ES", "MS", "GO"].includes(uf)) return 50.0;
+    return 80.0;
+  };
+
+  const shipping = calcularFrete(selectedAddress);
+  const discount = appliedCoupon ? Number(appliedCoupon.valor) : 0;
+  const grandTotal = totalValue + shipping - discount;
+>>>>>>> Stashed changes
 
   const loadAddress = async () => {
     setLoadingAddress(true);
     try {
       if (!userId) return;
-
       const data = await addressService.getByClientId(userId);
-
-      setAddresses(Array.isArray(data) ? data : data ? [data] : []);
+      const list = Array.isArray(data) ? data : data ? [data] : [];
+      setAddresses(list);
+      if (list.length === 1) setSelectedAddress(list[0]);
     } catch (error) {
     } finally {
       setLoadingAddress(false);
@@ -101,7 +147,7 @@ export default function CheckoutPage() {
 
   const handleFinishOrder = async () => {
     if (!selectedAddress) {
-      Alert.alert("Atenção", "Selecione um endereço para continuar.");
+      showToast("Selecione um endereço para continuar.", "warning");
       return;
     }
 
@@ -120,8 +166,14 @@ export default function CheckoutPage() {
     const orderData = {
       valor_total: grandTotal,
       metodo_pagamento: paymentMethod === "card" ? "Cartão" : "PIX",
+<<<<<<< Updated upstream
       fk_Cliente_id_cliente: user?.id,
       itens: itens
+=======
+      fk_Cliente_id_cliente: userId,
+      fk_Endereco_id_endereco: selectedAddress?.id_endereco ?? null,
+      itens: itens,
+>>>>>>> Stashed changes
     };
 
     try {
@@ -129,7 +181,7 @@ export default function CheckoutPage() {
       const orderId = backendResponse.id_pedido;
 
       const successUrl = ExpoLinking.createURL("payment-success");
-      const failureUrl = ExpoLinking.createURL("checkout");
+      const failureUrl = ExpoLinking.createURL("payment-failure");
 
       const paymentItems = [
         {
@@ -160,22 +212,34 @@ export default function CheckoutPage() {
         const firstItemName = cart.length > 0 ? cart[0].name : "item";
         database.runSync(
           "INSERT INTO notifications (user_id, title, message, status, date) VALUES (?, ?, ?, ?, ?)",
+<<<<<<< Updated upstream
           [userId, `PEDIDO #${orderId} - PAGAMENTO`, `Pagamento iniciado para ${firstItemName}.`, "pending", localDate],
+=======
+          [
+            userId,
+            `PEDIDO #${orderId} - PAGAMENTO`,
+            `Pagamento iniciado para ${firstItemName}.`,
+            "pending_payment",
+            localDate,
+          ],
+>>>>>>> Stashed changes
         );
       } catch (localErr) {
       }
 
-      const checkoutUrl = paymentResponse.init_point;
+      const checkoutUrl = paymentResponse.sandbox_init_point ?? paymentResponse.init_point;
+      clearCart();
       if (checkoutUrl) {
         Linking.openURL(checkoutUrl);
       } else {
         router.push("/payment-success");
       }
-    } catch (error) {
-      Alert.alert("Erro", "Falha ao processar pedido. Tente novamente.");
+    } catch {
+      showToast("Falha ao processar pedido. Tente novamente.", "error");
     }
   };
 
+<<<<<<< Updated upstream
   const handleDeleteAddress = (id) => {
     Alert.alert(
       "Remover endereço",
@@ -199,11 +263,23 @@ export default function CheckoutPage() {
         },
       ]
     );
+=======
+  const handleConfirmDeleteAddress = async () => {
+    const id = addressToDelete;
+    setAddressToDelete(null);
+    try {
+      await addressService.delete(id, userId);
+      if (selectedAddress?.id_endereco === id) setSelectedAddress(null);
+      await loadAddress();
+    } catch {
+      showToast("Não foi possível excluir o endereço.", "error");
+    }
+>>>>>>> Stashed changes
   };
 
   return (
     <View style={styles.container}>
-      <Header title="Finalizar Pedido" showBack />
+      <Header />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -212,7 +288,7 @@ export default function CheckoutPage() {
         contentContainerStyle={{ paddingBottom: 130 }}
       >
         <View style={styles.content}>
-          <Text style={styles.pageTitle}>Comprar</Text>
+          <Text style={styles.pageTitle}>Finalizar Pedido</Text>
 
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>Endereço</Text>
@@ -274,7 +350,7 @@ export default function CheckoutPage() {
                       <PencilLine size={20} color={Colors.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      onPress={() => handleDeleteAddress(item.id_endereco)}
+                      onPress={() => setAddressToDelete(item.id_endereco)}
                     >
                       <Trash2 size={20} color="#e74c3c" />
                     </TouchableOpacity>
@@ -287,7 +363,7 @@ export default function CheckoutPage() {
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>Itens</Text>
             <TouchableOpacity
-              onPress={() => router.push("/search")}
+              onPress={() => router.push("/search?from=checkout")}
               style={styles.plusIconCircle}
             >
               <Plus size={16} color={Colors.primary} strokeWidth={3} />
@@ -404,7 +480,9 @@ export default function CheckoutPage() {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Total do Frete</Text>
-              <Text style={styles.detailValue}>R$ {shipping.toFixed(2)}</Text>
+              <Text style={styles.detailValue}>
+                {selectedAddress ? `R$ ${shipping.toFixed(2)}` : "Selecione um endereço"}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Cupom de Desconto</Text>
@@ -544,13 +622,28 @@ export default function CheckoutPage() {
           }}
           user={user}
           addressData={addressToEdit}
+<<<<<<< Updated upstream
           onSave={() => {
             loadAddress();
             setAddressToEdit(null);
             setShowAddAddress(false);
           }}
+=======
+          onSave={() => { loadAddress(); }}
+>>>>>>> Stashed changes
         />
       </Modal>
+
+      <ConfirmDialog
+        visible={addressToDelete !== null}
+        type="danger"
+        title="Remover endereço?"
+        message="Tem certeza que deseja remover este endereço?"
+        confirmText="Remover"
+        cancelText="Cancelar"
+        onConfirm={handleConfirmDeleteAddress}
+        onCancel={() => setAddressToDelete(null)}
+      />
     </View>
   );
 }
@@ -558,12 +651,7 @@ export default function CheckoutPage() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { paddingHorizontal: 22, marginTop: 12, gap: 10 },
-  pageTitle: {
-    fontFamily: Fonts.newsreader,
-    fontSize: 24,
-    color: Colors.black,
-    textAlign: "center",
-  },
+  pageTitle: { fontFamily: Fonts.newsreader, fontSize: 24, color: Colors.black, textAlign: "center" },
   sectionRow: {
     flexDirection: "row",
     justifyContent: "space-between",

@@ -87,6 +87,55 @@ export default function OrdersPage() {
       } else {
         setOrders(localOrders);
       }
+<<<<<<< Updated upstream
+=======
+
+      const STATUS_NOTIFICATIONS = {
+        in_transit: { title: "Pedido em rota!", message: "Seu pedido saiu para entrega." },
+        delivered: { title: "Pedido entregue!", message: "Seu pedido foi entregue. Bom apetite!" },
+      };
+
+      const merged = backendOrders.map((backendOrder) => {
+        const id = backendOrder.id_pedido;
+        const mappedStatus = normalizeStatus(backendOrder.status_pedido);
+        const cached = localMap.get(id);
+
+        if (cached && cached.status !== mappedStatus && STATUS_NOTIFICATIONS[mappedStatus]) {
+          const { title, message } = STATUS_NOTIFICATIONS[mappedStatus];
+          const localDate = new Date().toLocaleString("pt-BR");
+          try {
+            database.runSync(
+              "INSERT INTO notifications (user_id, title, message, status, date) VALUES (?, ?, ?, ?, ?)",
+              [userId, `PEDIDO #${id} - ${title}`, message, mappedStatus, localDate],
+            );
+          } catch {}
+        }
+
+        database.runSync(
+          "INSERT OR REPLACE INTO orders (id, user_id, total, items, date, status) VALUES (?, ?, ?, ?, ?, ?)",
+          [
+            id,
+            userId,
+            backendOrder.valor_total,
+            JSON.stringify(cached?.items || []),
+            backendOrder.data_pedido,
+            mappedStatus,
+          ],
+        );
+
+        return {
+          id,
+          user_id: userId,
+          total: backendOrder.valor_total,
+          date: backendOrder.data_pedido,
+          status: mappedStatus,
+          items: cached?.items || [],
+        };
+      });
+
+      merged.sort((a, b) => (b.id || 0) - (a.id || 0));
+      setOrders(merged);
+>>>>>>> Stashed changes
     } catch (error) {
       console.error("Erro ao carregar pedidos:", error);
     }

@@ -1,8 +1,31 @@
+<<<<<<< Updated upstream
 import * as SQLite from 'expo-sqlite';
 
 const db = SQLite.openDatabaseSync('velvetslice.db');
+=======
+import * as SQLite from "expo-sqlite";
+import { Platform } from "react-native";
+
+const db = Platform.OS !== "web" ? SQLite.openDatabaseSync("velvetslice.db") : null;
+
+const normalizeDbUser = (row) => {
+  if (!row) return null;
+  return {
+    id: row.id,
+    id_cliente: row.id,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    password: row.password,
+    avatarUrl: row.avatar_url,
+    accessToken: row.access_token,
+    tokenType: row.token_type,
+  };
+};
+>>>>>>> Stashed changes
 
 export const initDatabase = () => {
+  if (!db) return;
   db.execSync(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,5 +99,37 @@ export const initDatabase = () => {
   }
 };
 
+<<<<<<< Updated upstream
 
 export const database = db;
+=======
+export const getPersistedUser = () => {
+  if (!db) return null;
+  const rows = db.getAllSync("SELECT * FROM users LIMIT 1");
+  return rows.length ? normalizeDbUser(rows[0]) : null;
+};
+
+export const saveUser = (user) => {
+  if (!db) return;
+  db.runSync(
+    "INSERT OR REPLACE INTO users (id, name, email, password, phone, avatar_url, access_token, token_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [
+      user.id ?? null,
+      user.name,
+      user.email,
+      user.password ?? null,
+      user.phone ?? null,
+      user.avatarUrl ?? null,
+      user.accessToken ?? null,
+      user.tokenType ?? null,
+    ],
+  );
+};
+
+export const deleteUser = (email) => {
+  if (!db) return;
+  db.runSync("DELETE FROM users WHERE email = ?", [email]);
+};
+
+export const database = db;
+>>>>>>> Stashed changes
