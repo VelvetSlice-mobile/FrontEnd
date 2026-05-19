@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Modal } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Star } from 'lucide-react-native';
 import { products } from '../../src/data/products';
@@ -8,6 +8,7 @@ import { Colors } from '../../src/constants/Colors';
 import { Fonts } from '../../src/constants/Fonts';
 import { Button } from '../../src/components/Button';
 import { Navbar } from '../../src/components/Navbar';
+import { ReviewsModal } from '../../src/components/ReviewsModal';
 
 export default function ProductDetailPage() {
   const { id, from } = useLocalSearchParams();
@@ -15,6 +16,7 @@ export default function ProductDetailPage() {
   const { addToCart } = useCart();
 
   const [selectedWeight, setSelectedWeight] = useState('1Kg');
+  const [showReviews, setShowReviews] = useState(false);
   const product = products.find((p) => p.id === id);
 
   if (!product) return <View style={styles.container}><Text>Produto não encontrado</Text></View>;
@@ -41,10 +43,11 @@ export default function ProductDetailPage() {
         <View style={styles.infoContainer}>
           <View style={styles.headerRow}>
             <Text style={styles.categoryText}>{product.category}</Text>
-            <View style={styles.ratingBadge}>
+            <TouchableOpacity style={styles.ratingBadge} onPress={() => setShowReviews(true)} activeOpacity={0.7}>
               <Star size={12} color={Colors.accent} fill={Colors.accent} />
               <Text style={styles.ratingText}>{product.rating}</Text>
-            </View>
+              <Text style={styles.ratingHint}>Ver avaliações</Text>
+            </TouchableOpacity>
           </View>
 
           <Text style={styles.productName}>{product.name}</Text>
@@ -72,7 +75,16 @@ export default function ProductDetailPage() {
           </View>
         </View>
       </ScrollView>
+
       <Navbar />
+
+      <Modal visible={showReviews} transparent animationType="slide">
+        <ReviewsModal
+          boloId={product.id}
+          visible={showReviews}
+          onClose={() => setShowReviews(false)}
+        />
+      </Modal>
     </View>
   );
 }
@@ -87,6 +99,7 @@ const styles = StyleSheet.create({
   categoryText: { fontFamily: Fonts.poppins, color: Colors.secondary, fontSize: 12 },
   ratingBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   ratingText: { fontFamily: Fonts.newsreaderBold, color: Colors.accent },
+  ratingHint: { fontFamily: Fonts.poppins, fontSize: 11, color: Colors.secondary, textDecorationLine: 'underline' },
   productName: { fontFamily: Fonts.newsreader, fontSize: 26, color: Colors.primary },
   productDescription: { fontFamily: Fonts.newsreader, fontSize: 16, color: Colors.secondary, lineHeight: 22 },
   sizeTitle: { fontFamily: Fonts.newsreader, fontSize: 18, marginTop: 10 },
