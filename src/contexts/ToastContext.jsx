@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useState } from "react";
+import PropTypes from "prop-types";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { ToastContainer } from "../components/Toast";
 
 const ToastContext = createContext(null);
@@ -16,13 +17,19 @@ export function ToastProvider({ children }) {
     setTimeout(() => dismiss(id), duration);
   }, [dismiss]);
 
+  const value = useMemo(() => ({ showToast, toasts, dismiss }), [showToast, toasts, dismiss]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={value}>
       {children}
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
     </ToastContext.Provider>
   );
 }
+
+ToastProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 export function useToast() {
   const ctx = useContext(ToastContext);

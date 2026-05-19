@@ -1,16 +1,22 @@
-import React, { createContext, useState, useContext, useCallback, useRef } from 'react';
+import PropTypes from 'prop-types';
+import React, { createContext, useState, useContext, useCallback, useMemo, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 
 const NavContext = createContext();
 
 export function NavProvider({ children }) {
   const [showNav, setShowNav] = useState(true);
+  const value = useMemo(() => ({ showNav, setShowNav }), [showNav]);
   return (
-    <NavContext.Provider value={{ showNav, setShowNav }}>
+    <NavContext.Provider value={value}>
       {children}
     </NavContext.Provider>
   );
 }
+
+NavProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 export const useNav = () => useContext(NavContext);
 
