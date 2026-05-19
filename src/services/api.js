@@ -1,13 +1,12 @@
-<<<<<<< Updated upstream
-import { database } from "./database";
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
-=======
 import { database, saveUser } from "./database";
 const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim();
 const REQUEST_TIMEOUT_MS = 12000;
 
 let _onSessionExpired = null;
 export const registerSessionExpiredHandler = (cb) => { _onSessionExpired = cb; };
+
+let _authToken = null;
+export const setAuthToken = (token) => { _authToken = token; };
 
 const getEndpoint = (path) => {
   if (!API_URL) {
@@ -32,8 +31,14 @@ const fetchWithTimeout = async (
   const AUTH_PATHS = ["/api/clients/login", "/api/clients/register"];
 
   try {
+    const headers = { ...(options.headers || {}) };
+    if (_authToken && !headers.Authorization && !headers.authorization) {
+      headers.Authorization = `Bearer ${_authToken}`;
+    }
+
     const response = await fetch(endpoint, {
       ...options,
+      headers,
       signal: controller.signal,
     });
 
@@ -57,6 +62,12 @@ const fetchWithTimeout = async (
   }
 };
 
+const adminFetch = (path, options = {}) => {
+  const headers = { ...(options.headers || {}) };
+  if (_authToken) headers.Authorization = `Bearer ${_authToken}`;
+  return fetch(getEndpoint(path), { ...options, headers });
+};
+
 const normalizeUser = (user) => ({
   id: user.id ?? user.id_cliente ?? null,
   id_cliente: user.id_cliente ?? user.id ?? null,
@@ -68,6 +79,7 @@ const normalizeUser = (user) => ({
   accessToken: user.accessToken ?? user.access_token ?? null,
   tokenType: user.tokenType ?? user.token_type ?? null,
   role: user.role ?? "cliente",
+  lastPasswordChange: user.lastPasswordChange ?? user.ultima_alteracao_senha ?? null,
 });
 
 const normalizeSession = (payload, fallbackUserData = {}) => {
@@ -121,11 +133,10 @@ const getApiErrorMessage = async (response, fallbackMessage) => {
 
   return errorData?.error || errorData?.message || fallbackMessage;
 };
->>>>>>> Stashed changes
 
 export const authService = {
   register: async (userData) => {
-    const response = await fetch(`${API_URL}/api/register`, {
+    const response = await fetch(getEndpoint("/api/clients/register"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -135,27 +146,24 @@ export const authService = {
         telefone: userData.phone,
       }),
     });
-    if (!response.ok) throw new Error("Erro no registro: API indisponível");
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || "Erro no registro.");
+    }
 
     const data = await response.json();
+    const normalized = normalizeSession(data, { email: userData.email, password: userData.password, phone: userData.phone });
 
-    database.runSync(
-      "INSERT OR REPLACE INTO users (id, name, email, password, phone) VALUES (?, ?, ?, ?, ?)",
-      [data.id_cliente, userData.name, userData.email, userData.password, userData.phone],
-    );
-
-    return data;
+    saveUser(normalized);
+    return normalized;
   },
 
   login: async (email, password) => {
-    const response = await fetch(`${API_URL}/api/login`, {
+    const response = await fetch(getEndpoint("/api/clients/login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, senha: password }),
     });
-<<<<<<< Updated upstream
-    if (!response.ok) throw new Error("Erro no login: API indisponível");
-=======
     if (!response.ok) {
       throw new Error(
         await getApiErrorMessage(response, "Erro no login: API indisponível"),
@@ -171,6 +179,21 @@ export const authService = {
     });
 
     return normalized;
+  },
+
+  resetPassword: async (email, novaSenha) => {
+    const response = await fetch(getEndpoint("/api/clients/reset-password"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim().toLowerCase(), novaSenha }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.error || errorData?.message || "Erro ao redefinir senha.");
+    }
+
+    return await response.json();
   },
 
   updatePassword: async (id, { senhaAtual, novaSenha }) => {
@@ -205,20 +228,37 @@ export const authService = {
         errorData?.error || errorData?.message || "Erro ao atualizar perfil",
       );
     }
->>>>>>> Stashed changes
 
     return await response.json();
+  },
+
+  uploadAvatar: async (userId, imageUri, accessToken) => {
+    const formData = new FormData();
+    const fileName = imageUri.split("/").pop() || `avatar-${Date.now()}.jpg`;
+    const ext = fileName.split(".").pop()?.toLowerCase();
+    const mimeType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+
+    formData.append("file", { uri: imageUri, name: fileName, type: mimeType });
+
+    const response = await fetchWithTimeout(`/api/clients/${userId}/avatar`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(await getApiErrorMessage(response, "Erro ao atualizar foto de perfil."));
+    }
+
+    const data = await response.json();
+    return normalizeUser(data.user ?? data);
   },
 };
 
 export const productService = {
   getAll: async () => {
     try {
-<<<<<<< Updated upstream
-      const response = await fetch(`${API_URL}/api/products`);
-=======
       const response = await fetchWithTimeout("/api/bolos");
->>>>>>> Stashed changes
       const data = await response.json();
       return data.map((item) => ({
         id: item.id_bolo,
@@ -226,43 +266,12 @@ export const productService = {
         description: item.descricao,
         price: item.preco,
         image: item.imagem,
+        categoria: item.categoria ?? "",
       }));
-    } catch (error) {
+    } catch {
       return [];
     }
   },
-<<<<<<< Updated upstream
-
-  create: async (productData) => {
-    try {
-      const response = await fetch(`${API_URL}/api/products`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome: productData.name,
-          descricao: productData.description,
-          preco: productData.price,
-          imagem: productData.image,
-        }),
-      });
-      return await response.json();
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  delete: async (productId) => {
-    try {
-      const response = await fetch(`${API_URL}/api/products/${productId}`, {
-        method: "DELETE",
-      });
-      return response.ok;
-    } catch (error) {
-      return false;
-    }
-  },
-=======
->>>>>>> Stashed changes
 };
 
 export const addressService = {
@@ -296,6 +305,8 @@ export const addressService = {
           CEP: addressData.CEP,
           estado: addressData.estado,
           complemento: addressData.complemento,
+          bairro: addressData.bairro,
+          cidade: addressData.cidade,
           fk_Cliente_id_cliente: addressData.fk_Cliente_id_cliente,
         }),
       });
@@ -346,6 +357,8 @@ export const addressService = {
           CEP: addressData.CEP,
           estado: addressData.estado,
           complemento: addressData.complemento,
+          bairro: addressData.bairro,
+          cidade: addressData.cidade,
         }),
       });
 
@@ -373,21 +386,7 @@ export const addressService = {
 
 export const orderService = {
   createOrder: async (orderData) => {
-<<<<<<< Updated upstream
-    try {
-      const response = await fetch(`${API_URL}/api/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          valor_total: orderData.valor_total,
-          metodo_pagamento: orderData.metodo_pagamento,
-          fk_Cliente_id_cliente:
-            orderData.fk_Cliente_id_cliente ?? orderData.fk_cliente_id_cliente,
-          itens: orderData.itens,
-        }),
-      });
-=======
-    const response = await fetch(getEndpoint("/api/orders"), {
+    const response = await fetchWithTimeout("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -396,16 +395,17 @@ export const orderService = {
         fk_Cliente_id_cliente:
           orderData.fk_Cliente_id_cliente ?? orderData.fk_cliente_id_cliente,
         fk_Endereco_id_endereco: orderData.fk_Endereco_id_endereco ?? null,
+        cupom_codigo: orderData.cupom_codigo ?? null,
+        desconto_valor: orderData.desconto_valor ?? 0,
         itens: orderData.itens,
       }),
     });
->>>>>>> Stashed changes
 
-      if (!response.ok) throw new Error("Erro ao criar pedido");
-      return await response.json();
-    } catch (error) {
-      throw error;
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Erro ${response.status} ao criar pedido`);
     }
+    return await response.json();
   },
 
   getByClientId: async (clientId) => {
@@ -413,7 +413,17 @@ export const orderService = {
       const response = await fetch(`${API_URL}/api/orders/client/${clientId}`);
       if (!response.ok) throw new Error("Erro ao buscar pedidos");
       return await response.json();
-    } catch (error) {
+    } catch {
+      return [];
+    }
+  },
+
+  getItems: async (orderId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/orders/${orderId}/items`);
+      if (!response.ok) return [];
+      return await response.json();
+    } catch {
       return [];
     }
   },
@@ -421,22 +431,22 @@ export const orderService = {
 
 export const paymentService = {
   createPayment: async (paymentData) => {
-    try {
-      const response = await fetch(`${API_URL}/api/payments/create-preference`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: paymentData.items,
-          id_pedido: paymentData.id_pedido,
-          back_urls: paymentData.back_urls,
-        }),
-      });
+    const response = await fetch(`${API_URL}/api/payments/create-preference`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: paymentData.items,
+        id_pedido: paymentData.id_pedido,
+        metodo_pagamento: paymentData.metodo_pagamento,
+        back_urls: paymentData.back_urls,
+      }),
+    });
 
-      if (!response.ok) throw new Error("Erro ao criar pagamento");
-      return await response.json();
-    } catch (error) {
-      throw error;
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || errData.message || `Erro ${response.status} ao criar pagamento`);
     }
+    return await response.json();
   },
 };
 
@@ -456,6 +466,17 @@ export const cupomService = {
 };
 
 export const adminService = {
+  registerAdmin: async ({ nome, telefone, email, senha, codigo }) => {
+    const response = await fetch(getEndpoint("/api/dashboard/register-admin"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, telefone, email, senha, codigo }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Erro ao cadastrar administrador.");
+    return data;
+  },
+
   getStats: async () => {
     const response = await fetchWithTimeout("/api/dashboard/stats");
     if (!response.ok) throw new Error("Erro ao buscar estatísticas.");
@@ -482,7 +503,7 @@ export const adminService = {
   },
 
   updatePedidoStatus: async (id, status_pedido) => {
-    const response = await fetch(getEndpoint(`/api/dashboard/pedidos/${id}/status`), {
+    const response = await adminFetch(`/api/dashboard/pedidos/${id}/status`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status_pedido }),
@@ -498,7 +519,7 @@ export const adminService = {
   },
 
   createBolo: async (data) => {
-    const response = await fetch(getEndpoint("/api/dashboard/bolos"), {
+    const response = await adminFetch("/api/dashboard/bolos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -508,7 +529,7 @@ export const adminService = {
   },
 
   updateBolo: async (id, data) => {
-    const response = await fetch(getEndpoint(`/api/dashboard/bolos/${id}`), {
+    const response = await adminFetch(`/api/dashboard/bolos/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -538,8 +559,16 @@ export const adminService = {
     return response.json();
   },
 
+  toggleBoloAtivo: async (id) => {
+    const response = await adminFetch(`/api/dashboard/bolos/${id}/toggle`, {
+      method: "PATCH",
+    });
+    if (!response.ok) throw new Error("Erro ao alterar status do bolo.");
+    return response.json();
+  },
+
   deleteBolo: async (id) => {
-    const response = await fetch(getEndpoint(`/api/dashboard/bolos/${id}`), {
+    const response = await adminFetch(`/api/dashboard/bolos/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Erro ao excluir bolo.");
@@ -563,6 +592,36 @@ export const avaliacaoService = {
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error(err.error || "Erro ao enviar avaliação.");
+    }
+    return response.json();
+  },
+
+  getByClient: async (clientId) => {
+    const response = await fetchWithTimeout(`/api/bolos/avaliacoes/cliente/${clientId}`);
+    if (!response.ok) throw new Error("Erro ao buscar avaliações.");
+    return response.json();
+  },
+
+  update: async (id, { nota, comentario }) => {
+    const response = await fetchWithTimeout(`/api/bolos/avaliacoes/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nota, comentario }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || "Erro ao atualizar avaliação.");
+    }
+    return response.json();
+  },
+
+  delete: async (id) => {
+    const response = await fetchWithTimeout(`/api/bolos/avaliacoes/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || "Erro ao excluir avaliação.");
     }
     return response.json();
   },
