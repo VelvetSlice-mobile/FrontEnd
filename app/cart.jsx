@@ -71,7 +71,7 @@ export default function CartPage() {
 
   return (
     <View style={styles.container}>
-      <Header />
+      <Header userName={user?.name ?? user?.nome} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -171,9 +171,20 @@ export default function CartPage() {
               <View style={styles.bottomRow}>
                 <View style={styles.totalContainer}>
                   <Text style={styles.totalLabel}>Total do pedido</Text>
-                  <Text style={styles.totalPrice}>
-                    R$ {total.toFixed(2).replace(".", ",")}
-                  </Text>
+                  {appliedCoupon ? (
+                    <>
+                      <Text style={styles.totalPriceStrike}>
+                        R$ {total.toFixed(2).replace(".", ",")}
+                      </Text>
+                      <Text style={styles.totalPrice}>
+                        R$ {Math.max(0, total - Number(appliedCoupon.valor)).toFixed(2).replace(".", ",")}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text style={styles.totalPrice}>
+                      R$ {total.toFixed(2).replace(".", ",")}
+                    </Text>
+                  )}
                 </View>
                 <Button onPress={handleCheckout}>Ir para pagamento</Button>
               </View>
@@ -218,4 +229,5 @@ const styles = StyleSheet.create({
   totalContainer: { gap: 2 },
   totalLabel: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary },
   totalPrice: { fontFamily: Fonts.newsreaderBold, fontSize: 22, color: Colors.primary },
+  totalPriceStrike: { fontFamily: Fonts.newsreaderBold, fontSize: 15, color: Colors.secondary, textDecorationLine: "line-through" },
 });
