@@ -10,8 +10,16 @@ import { Header } from '../src/components/Header';
 import { Navbar } from '../src/components/Navbar';
 import { useAuth } from '../src/contexts/AuthContext';
 
+const STATUS_TO_TAB = {
+  in_transit: "in_transit",
+  delivered: "delivered",
+  preparing: "preparing",
+  pending_payment: "preparing",
+};
+
 export default function NotificationsPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,8 +31,8 @@ useEffect(() => {
         [user.id]
       );
       setNotifications(result);
-    } catch (error) {
-      console.error("Erro ao ler notificações do banco:", error);
+    } catch {
+      // leitura local — falha silenciosa, exibe lista vazia
     } finally {
       setLoading(false);
     }
@@ -34,11 +42,11 @@ useEffect(() => {
   const getIcon = (status) => {
     switch (status) {
       case 'pending_payment': 
-        return <CreditCard size={24} color={Colors.accent || '#D4AF37'} />;
+        return <CreditCard size={24} color={Colors.accent} />;
       case 'preparing': 
         return <Package size={24} color={Colors.primary} />;
       case 'in_transit': 
-        return <Truck size={24} color={Colors.accent || '#D4AF37'} />;
+        return <Truck size={24} color={Colors.accent} />;
       case 'delivered': 
         return <CheckCircle size={24} color="#27ae60" />;
       default: 
@@ -55,30 +63,35 @@ useEffect(() => {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.content}>
-          {loading ? (
+          {loading && (
             <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 50 }} />
-          ) : notifications.length === 0 ? (
+          )}
+          {!loading && notifications.length === 0 && (
             <View style={styles.emptyContainer}>
               <Bell size={60} color={Colors.secondary} opacity={0.3} />
               <Text style={styles.emptyText}>Você não tem novas notificações no momento.</Text>
             </View>
-          ) : (
-            notifications.map((notif) => (
-              <View key={notif.id} style={styles.card}>
+          )}
+          {!loading && notifications.map((notif) => {
+            const tab = STATUS_TO_TAB[notif.status] ?? "preparing";
+            return (
+              <TouchableOpacity
+                key={notif.id}
+                style={styles.card}
+                activeOpacity={0.75}
+                onPress={() => router.push({ pathname: "/orders", params: { status: tab } })}
+              >
                 <View style={styles.iconContainer}>
                   {getIcon(notif.status)}
                 </View>
-                
                 <View style={styles.textContainer}>
-                  <View style={styles.headerRow}>
-                    <Text style={styles.notifTitle}>{notif.title}</Text>
-                    <Text style={styles.notifTime}>{notif.date}</Text>
-                  </View>
+                  <Text style={styles.notifTitle}>{notif.title}</Text>
+                  {notif.date ? <Text style={styles.notifTime}>{notif.date}</Text> : null}
                   <Text style={styles.notifDescription}>{notif.message}</Text>
                 </View>
-              </View>
-            ))
-          )}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -124,18 +137,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12
   },
-  textContainer: { flex: 1, gap: 4 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  notifTitle: { 
-    fontFamily: Fonts.newsreader, 
-    fontSize: 16, 
-    fontWeight: 'bold', 
-    color: Colors.primary 
+  textContainer: { flex: 1, gap: 2 },
+  notifTitle: {
+    fontFamily: Fonts.newsreader,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.primary
   },
-  notifTime: { 
-    fontFamily: Fonts.poppins, 
-    fontSize: 11, 
-    color: Colors.secondary 
+  notifTime: {
+    fontFamily: Fonts.poppins,
+    fontSize: 11,
+    color: Colors.secondary
   },
   notifDescription: { 
     fontFamily: Fonts.poppins, 
