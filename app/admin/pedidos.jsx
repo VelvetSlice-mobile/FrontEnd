@@ -18,7 +18,7 @@ const TABS = [
   { label: "Pendentes", value: "Pendente" },
   { label: "Preparando", value: "Pago" },
   { label: "Enviados", value: "Enviado" },
-  { label: "Entregas", value: "Entregue" },
+  { label: "Entregues", value: "Entregue" },
 ];
 
 const STATUS_COLOR = {
@@ -27,6 +27,28 @@ const STATUS_COLOR = {
   Enviado: "#2980b9",
   Entregue: "#27ae60",
 };
+
+const STATUS_LABEL = {
+  Pendente: "Pendente",
+  Pago: "Preparando",
+  Enviado: "Enviado",
+  Entregue: "Entregue",
+};
+
+function formatDate(dateStr) {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} às ${hours}:${minutes}`;
+  } catch {
+    return dateStr.slice(0, 10);
+  }
+}
 
 export default function AdminPedidos() {
   const router = useRouter();
@@ -78,15 +100,18 @@ export default function AdminPedidos() {
               style={styles.card}
               onPress={() => router.push(`/admin/pedido-detalhado?id=${item.id_pedido}`)}
             >
-              <View style={styles.cardLeft}>
+              <View style={styles.cardTop}>
                 <Text style={styles.pedidoId}>#{item.id_pedido}</Text>
-                <Text style={styles.clienteName}>{item.nome_cliente}</Text>
-                <Text style={styles.pedidoDate}>{item.data_pedido?.slice(0, 10)}</Text>
-              </View>
-              <View style={styles.cardRight}>
                 <View style={[styles.statusBadge, { backgroundColor: STATUS_COLOR[item.status_pedido] || "#999" }]}>
-                  <Text style={styles.statusText}>{item.status_pedido}</Text>
+                  <Text style={styles.statusText}>{STATUS_LABEL[item.status_pedido] || item.status_pedido}</Text>
                 </View>
+              </View>
+              <Text style={styles.clienteName}>{item.nome_cliente}</Text>
+              <Text style={styles.itemCount}>
+                {item.total_itens != null ? `${item.total_itens} ${item.total_itens === 1 ? "item" : "itens"}` : ""}
+              </Text>
+              <View style={styles.cardBottom}>
+                <Text style={styles.pedidoDate}>{formatDate(item.data_pedido)}</Text>
                 <Text style={styles.pedidoTotal}>
                   R$ {Number(item.valor_total).toFixed(2).replace(".", ",")}
                 </Text>
@@ -110,15 +135,16 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: Colors.primary },
   tabText: { fontFamily: Fonts.poppins, fontSize: 11, color: Colors.primary },
   tabTextActive: { color: Colors.background },
-  list: { paddingHorizontal: 16, paddingBottom: 40, gap: 12 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", elevation: 2 },
-  cardLeft: { gap: 4 },
+  list: { paddingHorizontal: 16, paddingBottom: 100, gap: 12 },
+  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, elevation: 2, gap: 4 },
+  cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   pedidoId: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.primary },
-  clienteName: { fontFamily: Fonts.poppins, fontSize: 13, color: "#333" },
-  pedidoDate: { fontFamily: Fonts.poppins, fontSize: 11, color: Colors.secondary },
-  cardRight: { alignItems: "flex-end", gap: 6 },
   statusBadge: { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 3 },
   statusText: { fontFamily: Fonts.poppins, fontSize: 11, color: "#fff" },
+  clienteName: { fontFamily: Fonts.poppins, fontSize: 13, color: "#333" },
+  itemCount: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary },
+  cardBottom: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4 },
+  pedidoDate: { fontFamily: Fonts.poppins, fontSize: 11, color: Colors.secondary },
   pedidoTotal: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.primary },
   emptyText: { textAlign: "center", color: Colors.secondary, fontFamily: Fonts.poppins, marginTop: 40 },
 });

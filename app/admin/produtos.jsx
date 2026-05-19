@@ -4,11 +4,21 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, "");
+
+function resolveImageUrl(imagem) {
+  if (!imagem) return null;
+  if (/^https?:\/\//i.test(imagem)) return imagem;
+  if (imagem.startsWith("/")) return `${API_URL}${imagem}`;
+  return null;
+}
 import { AdminNavbar } from "../../src/components/AdminNavbar";
 import { ConfirmDialog } from "../../src/components/ConfirmDialog";
 import { Header } from "../../src/components/Header";
@@ -61,28 +71,39 @@ export default function AdminProdutos() {
           data={bolos}
           keyExtractor={(item) => String(item.id_bolo)}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.info}>
-                <Text style={styles.nome}>{item.nome}</Text>
-                <Text style={styles.preco}>R$ {Number(item.preco).toFixed(2).replace(".", ",")}</Text>
-              </View>
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={() => router.push(`/admin/editar-bolo?id=${item.id_bolo}`)}
-                >
-                  <Pencil size={16} color={Colors.background} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.deleteBtn}
-                  onPress={() => setDeleteTarget({ id: item.id_bolo, nome: item.nome })}
-                >
-                  <Trash2 size={16} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+          renderItem={({ item }) => {
+            const imageUrl = resolveImageUrl(item.imagem);
+            return (
+              <TouchableOpacity
+                style={styles.card}
+                onPress={() => router.push(`/admin/editar-bolo?id=${item.id_bolo}`)}
+              >
+                {imageUrl ? (
+                  <Image source={{ uri: imageUrl }} style={styles.productImage} />
+                ) : (
+                  <View style={[styles.productImage, styles.productImagePlaceholder]} />
+                )}
+                <View style={styles.info}>
+                  <Text style={styles.nome}>{item.nome}</Text>
+                  <Text style={styles.preco}>R$ {Number(item.preco).toFixed(2).replace(".", ",")}</Text>
+                </View>
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={styles.editBtn}
+                    onPress={() => router.push(`/admin/editar-bolo?id=${item.id_bolo}`)}
+                  >
+                    <Pencil size={16} color={Colors.background} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteBtn}
+                    onPress={(e) => { e.stopPropagation?.(); setDeleteTarget({ id: item.id_bolo, nome: item.nome }); }}
+                  >
+                    <Trash2 size={16} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
           ListEmptyComponent={<Text style={styles.emptyText}>Nenhum bolo cadastrado.</Text>}
         />
       )}
@@ -110,7 +131,9 @@ export default function AdminProdutos() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   list: { padding: 16, gap: 12, paddingBottom: 100 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", elevation: 2 },
+  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", gap: 12, elevation: 2 },
+  productImage: { width: 56, height: 56, borderRadius: 10 },
+  productImagePlaceholder: { backgroundColor: "#e0d5cc" },
   info: { flex: 1, gap: 4 },
   nome: { fontFamily: Fonts.newsreader, fontSize: 16, color: Colors.primary },
   preco: { fontFamily: Fonts.newsreaderBold, fontSize: 14, color: Colors.secondary },
