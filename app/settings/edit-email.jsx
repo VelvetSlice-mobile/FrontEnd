@@ -1,65 +1,53 @@
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
 } from "react-native";
 import { Button } from "../../src/components/Button";
 import { FormInput } from "../../src/components/FormInput";
-import { Navbar } from "../../src/components/Navbar";
+import { Header } from "../../src/components/Header";
 import { Colors } from "../../src/constants/Colors";
 import { Fonts } from "../../src/constants/Fonts";
-import { useAuth } from "../../src/contexts/AuthContext"; // Importado
+import { useAuth } from "../../src/contexts/AuthContext";
+import { useToast } from "../../src/contexts/ToastContext";
 
 export default function EditEmailPage() {
   const router = useRouter();
-  const { user, updateUserData } = useAuth(); // Hook de autenticação
+  const { user, updateUserData } = useAuth();
+  const { showToast } = useToast();
 
-  // Iniciamos com o email atual do usuário
   const [email, setEmail] = useState(user?.email || "");
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
-    // 1. Validação de campo vazio
     if (!email.trim()) {
-      return Alert.alert("Erro", "Por favor, digite um e-mail.");
+      showToast("Digite um e-mail.", "warning");
+      return;
     }
-
-    // 2. Validação de formato de e-mail (Regex)
-    const emailRegex = /\S+@\S+\.\S+/;
-    if (!emailRegex.test(email.trim())) {
-      return Alert.alert(
-        "Erro",
-        "Por favor, insira um formato de e-mail válido.",
-      );
+    if (!/\S+@\S+\.\S+/.test(email.trim())) {
+      showToast("Informe um e-mail válido.", "warning");
+      return;
     }
-
-    // 3. Verifica se o e-mail é igual ao atual
     if (email.trim().toLowerCase() === user?.email?.toLowerCase()) {
-      return router.back();
+      router.back();
+      return;
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
-
-      // Chamando o motor de atualização no Contexto
-      const result = await updateUserData({
-        email: email.trim().toLowerCase(),
-      });
-
+      const result = await updateUserData({ email: email.trim().toLowerCase() });
       if (result.success) {
-        Alert.alert("Sucesso", "E-mail alterado com sucesso!", [
-          { text: "OK", onPress: () => router.back() },
-        ]);
+        showToast("E-mail alterado com sucesso!", "success");
+        router.back();
       } else {
-        Alert.alert("Erro", result.message || "Falha ao atualizar e-mail.");
+        showToast(result.message || "Falha ao atualizar e-mail.", "error");
       }
-    } catch (error) {
-      Alert.alert("Erro", "Ocorreu um erro ao processar sua solicitação.");
+    } catch {
+      showToast("Ocorreu um erro ao processar sua solicitação.", "error");
     } finally {
       setLoading(false);
     }
@@ -69,8 +57,8 @@ export default function EditEmailPage() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={0}
     >
+      <Header title="Alterar e-mail" showBack />
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -78,8 +66,7 @@ export default function EditEmailPage() {
       >
         <Text style={styles.title}>Alterar e-mail</Text>
         <Text style={styles.description}>
-          Atualize seu endereço de e-mail para manter suas informações de
-          contato e segurança em dia.
+          Atualize seu endereço de e-mail para manter suas informações em dia.
         </Text>
 
         <FormInput
@@ -93,43 +80,18 @@ export default function EditEmailPage() {
           autoCorrect={false}
         />
 
-        <Button
-          fullWidth
-          onPress={handleSave}
-          loading={loading}
-          style={styles.buttonMargin}
-        >
+        <Button fullWidth onPress={handleSave} loading={loading} style={styles.buttonMargin}>
           Salvar alteração
         </Button>
       </ScrollView>
-      <Navbar />
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background || "#FFF6E9",
-  },
-  content: {
-    paddingHorizontal: 22,
-    paddingTop: 60,
-    gap: 16,
-  },
-  title: {
-    fontFamily: Fonts.newsreader || "System",
-    fontSize: 24,
-    color: Colors.primary || "#4F2C1D",
-  },
-  description: {
-    fontFamily: Fonts.poppins || "System",
-    fontSize: 14,
-    color: Colors.primary || "#4F2C1D",
-    opacity: 0.8,
-    marginBottom: 5,
-  },
-  buttonMargin: {
-    marginTop: 10,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { paddingHorizontal: 22, paddingTop: 24, gap: 16 },
+  title: { fontFamily: Fonts.newsreader, fontSize: 24, color: Colors.primary },
+  description: { fontFamily: Fonts.poppins, fontSize: 14, color: Colors.primary, opacity: 0.8 },
+  buttonMargin: { marginTop: 10 },
 });

@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { usePathname, useRouter } from "expo-router";
 import { Home, Search, ShoppingCart, User } from "lucide-react-native";
 import React from "react";
@@ -73,6 +74,10 @@ export function Navbar({ visible }) {
     </View>
   );
 }
+
+Navbar.propTypes = {
+  visible: PropTypes.bool,
+};
 
 const styles = StyleSheet.create({
   container: {

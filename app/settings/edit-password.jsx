@@ -1,75 +1,109 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
 import { FormInput } from '../../src/components/FormInput';
-import { Navbar } from '../../src/components/Navbar';
+import { Header } from '../../src/components/Header';
 import { Colors } from '../../src/constants/Colors';
 import { Fonts } from '../../src/constants/Fonts';
-import { useAuth } from '../../src/contexts/AuthContext'; // Importado
+import { useAuth } from '../../src/contexts/AuthContext';
+import { useToast } from '../../src/contexts/ToastContext';
+import { authService } from '../../src/services/api';
+import { saveUser } from '../../src/services/database';
+
+function formatLastChanged(isoDate) {
+  if (!isoDate) return null;
+  const date = new Date(isoDate);
+  if (isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
 
 export default function EditPasswordPage() {
   const router = useRouter();
-  const { updateUserData } = useAuth(); // Hook de autenticação
+  const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const lastChanged = formatLastChanged(user?.lastPasswordChange ?? user?.ultima_alteracao_senha);
+
   const handleSave = async () => {
-    // 1. Validação de campos vazios
     if (!currentPassword || !newPassword || !confirmPassword) {
-      return Alert.alert('Erro', 'Preencha todos os campos.');
+      return showToast('Preencha todos os campos.', 'error');
     }
 
-    // 2. Validação de tamanho mínimo
     if (newPassword.length < 6) {
-      return Alert.alert('Erro', 'A nova senha deve ter no mínimo 6 caracteres.');
+      return showToast('A nova senha deve ter no mínimo 6 caracteres.', 'error');
     }
 
-    // 3. Validação de coincidência
+    if (newPassword.length > 100) {
+      return showToast('A nova senha deve ter no máximo 100 caracteres.', 'error');
+    }
+
     if (newPassword !== confirmPassword) {
-      return Alert.alert('Erro', 'A nova senha e a confirmação não coincidem.');
+      return showToast('A confirmação não confere com a nova senha.', 'error');
     }
 
-    // 4. Validação de senha nova igual à antiga 
     if (newPassword === currentPassword) {
-      return Alert.alert('Aviso', 'A nova senha não pode ser igual à senha atual.');
+      return showToast('A nova senha não pode ser igual à senha atual.', 'warning');
+    }
+
+    const userId = user?.id ?? user?.id_cliente;
+    if (!userId) {
+      return showToast('Usuário não identificado. Faça login novamente.', 'error');
     }
 
     try {
       setLoading(true);
+      const result = await authService.updatePassword(userId, {
+        senhaAtual: currentPassword,
+        novaSenha: newPassword,
+      });
 
-      // Chamando o motor de atualização
-      const result = await updateUserData({ password: newPassword });
+      saveUser({
+        ...user,
+        password: newPassword,
+        lastPasswordChange: result?.ultima_alteracao_senha ?? user?.lastPasswordChange,
+      });
 
-      if (result.success) {
-        Alert.alert('Sucesso', 'Senha alterada com sucesso!', [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
-      } else {
-        Alert.alert('Erro', result.message || 'Falha ao atualizar senha.');
-      }
+      showToast('Senha alterada com sucesso!', 'success');
+      router.back();
     } catch (error) {
-      Alert.alert('Erro', 'Ocorreu um erro inesperado.');
+      showToast(error.message || 'Falha ao alterar senha.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <Header title="Alterar senha" showBack />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>Alterar senha</Text>
         <Text style={styles.description}>
-          A senha deve ter no mínimo 6 caracteres e incluir uma combinação de números, letras e caracteres especiais (!@#$%)
+          Use entre 6 e 100 caracteres. Misture letras, números e símbolos (!@#$%) para mais segurança.
         </Text>
+
+        {lastChanged ? (
+          <View style={styles.infoBox}>
+            <Text style={styles.infoText}>Última alteração: {lastChanged}</Text>
+          </View>
+        ) : null}
 
         <FormInput
           label="Senha atual"
           placeholder="••••••••••••"
-          secureTextEntry={true} // Garante que a senha fique oculta
+          secureTextEntry
           value={currentPassword}
           onChangeText={setCurrentPassword}
         />
@@ -77,53 +111,44 @@ export default function EditPasswordPage() {
         <FormInput
           label="Nova senha"
           placeholder="••••••••••••"
-          secureTextEntry={true}
+          secureTextEntry
           value={newPassword}
           onChangeText={setNewPassword}
+          maxLength={100}
         />
 
         <FormInput
           label="Confirmar nova senha"
           placeholder="••••••••••••"
-          secureTextEntry={true}
+          secureTextEntry
           value={confirmPassword}
           onChangeText={setConfirmPassword}
+          maxLength={100}
         />
 
-        <TouchableOpacity onPress={() => Alert.alert('Recuperação', 'Link de redefinição enviado ao seu e-mail.')}>
-          <Text style={styles.forgotText}>Esqueceu senha?</Text>
-        </TouchableOpacity>
-
-        <Button
-          fullWidth
-          onPress={handleSave}
-          loading={loading} // Adicionado feedback visual de carregamento
-        >
+        <Button fullWidth onPress={handleSave} loading={loading} style={styles.buttonMargin}>
           Alterar senha
         </Button>
-      </View>
-      <Navbar />
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background || '#FFF6E9' },
-  content: { paddingHorizontal: 22, paddingTop: 60, gap: 16 },
-  title: { fontFamily: Fonts.newsreader || 'System', fontSize: 24, color: Colors.primary || '#4F2C1D' },
-  description: {
-    fontFamily: Fonts.poppins || 'System',
-    fontSize: 14,
-    color: Colors.primary || '#4F2C1D',
-    opacity: 0.8,
-    marginBottom: 5
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { paddingHorizontal: 22, paddingTop: 24, gap: 16 },
+  title: { fontFamily: Fonts.newsreader, fontSize: 24, color: Colors.primary },
+  description: { fontFamily: Fonts.poppins, fontSize: 14, color: Colors.primary, opacity: 0.8 },
+  infoBox: {
+    backgroundColor: 'rgba(79,44,29,0.06)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  forgotText: {
-    fontFamily: Fonts.poppins || 'System',
-    fontSize: 14,
-    color: Colors.primary || '#4F2C1D',
-    textAlign: 'right',
-    textDecorationLine: 'underline',
-    marginBottom: 10
+  infoText: {
+    fontFamily: Fonts.poppins,
+    fontSize: 13,
+    color: Colors.primary,
   },
+  buttonMargin: { marginTop: 10 },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,19 +7,32 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Cake, CakeSlice, Cherry, Candy } from "lucide-react-native";
 import { useNavScrollBehavior } from "../src/contexts/NavContext";
+import { useAuth } from "../src/contexts/AuthContext";
 
-import { products } from "../src/data/products";
+import { products as localProducts } from "../src/data/products";
 import { Colors } from "../src/constants/Colors";
 import { Fonts } from "../src/constants/Fonts";
+import { productService } from "../src/services/api";
 
 import { Header } from "../src/components/Header";
 import { ProductCard } from "../src/components/ProductCard";
 
 const { width } = Dimensions.get("window");
+
+function mergeWithLocal(apiProduct) {
+  const local = localProducts.find((lp) => String(lp.id) === String(apiProduct.id));
+  return {
+    ...apiProduct,
+    category: apiProduct.category || apiProduct.categoria || local?.category || "",
+    rating: apiProduct.rating ?? local?.rating ?? null,
+    image: apiProduct.image || local?.image || null,
+  };
+}
 
 const getCategoryIcon = (category) => {
   const iconProps = { size: 28, color: Colors.primary };
@@ -39,20 +52,34 @@ const getCategoryIcon = (category) => {
 
 export default function HomePage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [products, setProducts] = useState(localProducts);
+  const [loadingProducts, setLoadingProducts] = useState(true);
   const handleScroll = useNavScrollBehavior();
+
+  useEffect(() => {
+    productService.getAll()
+      .then((apiProducts) => {
+        if (apiProducts.length > 0) {
+          setProducts(apiProducts.map(mergeWithLocal));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingProducts(false));
+  }, []);
 
   const categories = ["Bolo", "Choco", "Frutas", "Doces"];
 
   const filteredProducts = selectedCategory
     ? products.filter((p) =>
-        p.category.toLowerCase().includes(selectedCategory.toLowerCase()),
+        (p.category || "").toLowerCase().includes(selectedCategory.toLowerCase()),
       )
     : products;
 
   return (
     <View style={styles.mainContainer}>
-      <Header />
+      <Header userName={user?.name ?? user?.nome} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -77,7 +104,7 @@ export default function HomePage() {
                   <Text style={styles.offerButtonText}>Ver</Text>
                 </View>
               </View>
-              <Image source={products[0].image} style={styles.offerImage} />
+              <Image source={localProducts[0].image} style={styles.offerImage} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -94,6 +121,7 @@ export default function HomePage() {
                   <Text style={styles.offerButtonText}>Ver</Text>
                 </View>
               </View>
+              <Image source={localProducts[1].image} style={styles.offerImage} />
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -121,11 +149,15 @@ export default function HomePage() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Só os melhores</Text>
-          <View style={styles.gridContainer}>
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </View>
+          {loadingProducts ? (
+            <ActivityIndicator color={Colors.primary} style={{ marginVertical: 20 }} />
+          ) : (
+            <View style={styles.gridContainer}>
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>

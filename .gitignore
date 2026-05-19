@@ -1,5 +1,8 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
+# Credenciais locais
+../credenciais.txt
+
 # dependencies
 node_modules/
 .env
@@ -62,3 +65,6 @@ local.properties
 # Arquivos do sistema
 .DS_Store
 Thumbs.db
+
+# Pasta de testes temporarios
+TesteGit/

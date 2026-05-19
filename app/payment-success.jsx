@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { CheckCircle } from "lucide-react-native";
 import { products } from "../src/data/products";
+import { useAuth } from "../src/contexts/AuthContext";
 import { useCart } from "../src/contexts/CartContext";
 import { useNav } from "../src/contexts/NavContext";
 import { Colors } from "../src/constants/Colors";
@@ -13,6 +14,7 @@ import { ProductCard } from "../src/components/ProductCard";
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const { clearCart } = useCart();
   const { setShowNav } = useNav();
   const lastOffset = useRef(0);
@@ -40,7 +42,7 @@ export default function PaymentSuccessPage() {
 
   return (
     <View style={styles.container}>
-      <Header />
+      <Header userName={user?.name ?? user?.nome} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

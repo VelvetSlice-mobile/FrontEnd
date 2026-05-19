@@ -1,154 +1,259 @@
-import React, { useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import PropTypes from "prop-types";
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  PanResponder,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Trash2 } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
+import { useToast } from "../contexts/ToastContext";
 import { useViaCep } from "../hooks/useViaCep";
 import { addressService } from "../services/api";
 import { Button } from "./Button";
 
-export function AddAddressModal({ onClose, onSave, user, addressData }) {
+export function AddAddressModal({ onClose, onSave, onDelete, user, addressData }) {
   const { endereco, loading, error, buscarCep, atualizarEndereco } = useViaCep(addressData);
+  const { showToast } = useToast();
+  const insets = useSafeAreaInsets();
   const [saving, setSaving] = useState(false);
-  
-  // NOVO: Estado para a referência do endereço
   const [nomeEndereco, setNomeEndereco] = useState(addressData?.nome_endereco || "");
 
+  const isEditing = !!addressData?.id_endereco;
+  let saveLabel = isEditing ? "Salvar alterações" : "Adicionar endereço";
+  if (saving) saveLabel = "Salvando...";
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => g.dy > 8 && Math.abs(g.dy) > Math.abs(g.dx),
+      onPanResponderRelease: (_, g) => { if (g.dy > 60) onClose(); },
+    })
+  ).current;
+
   const handleCepChange = (texto) => {
-    atualizarEndereco('cep', texto);
-    if (texto.replace(/\D/g, '').length === 8) {
-      buscarCep(texto);
-    }
+    atualizarEndereco("cep", texto);
+    if (texto.replace(/\D/g, "").length === 8) buscarCep(texto);
   };
 
   const handleSave = async () => {
     if (saving) return;
+    if (!nomeEndereco.trim()) { showToast("Informe uma referência (Ex: Casa, Trabalho).", "warning"); return; }
+    if (!endereco.cep || endereco.cep.replace(/\D/g, "").length < 8) { showToast("Informe um CEP válido.", "warning"); return; }
+    if (!endereco.numero?.trim()) { showToast("Informe o número do endereço.", "warning"); return; }
 
-    if (!endereco.cep || !endereco.rua || !endereco.numero || !nomeEndereco) {
-      Alert.alert("Atenção", "Preencha a Referência, o CEP e o Número.");
-      return;
-    }
+    const clientId = user?.id ?? user?.id_cliente;
+    if (!clientId) { showToast("Usuário não identificado.", "error"); return; }
 
     setSaving(true);
-    try {
-      const payload = {
-        fk_Cliente_id_cliente: user?.id ?? user?.id_cliente,
-        CEP: endereco.cep,
-        logradouro: endereco.rua,
-        numero: endereco.numero,
-        complemento: endereco.complemento,
-        bairro: endereco.bairro,
-        cidade: endereco.cidade,
-        estado: endereco.estado,
-        nome_endereco: nomeEndereco,
-      };
+    const payload = {
+      fk_Cliente_id_cliente: clientId,
+      CEP: endereco.cep,
+      logradouro: endereco.rua,
+      numero: endereco.numero,
+      complemento: endereco.complemento,
+      bairro: endereco.bairro,
+      cidade: endereco.cidade,
+      estado: endereco.estado,
+      nome_endereco: nomeEndereco.trim(),
+    };
 
-      if (addressData?.id_endereco) {
+    try {
+      if (isEditing) {
         await addressService.update(addressData.id_endereco, payload);
       } else {
         await addressService.create(payload);
       }
-
-      onClose(); 
-      onSave(); 
-      
-    } catch (err) {
-      Alert.alert("Erro", "Não foi possível salvar o endereço.");
+      onSave();
+      onClose();
+    } catch {
+      showToast("Não foi possível salvar o endereço.", "error");
       setSaving(false);
     }
   };
 
   return (
-    <View style={styles.overlay}>
-      <View style={styles.modalBody}>
-        <Text style={styles.title}>{addressData ? "Editar Endereço" : "Novo Endereço"}</Text>
+    <KeyboardAvoidingView
+      style={styles.overlay}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Referência (Ex: Casa, Trabalho, Namorada)"
-          value={nomeEndereco}
-          onChangeText={setNomeEndereco}
-          autoCapitalize="words"
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="CEP"
-          value={endereco.cep}
-          onChangeText={handleCepChange}
-          keyboardType="numeric"
-          maxLength={9}
-          onBlur={() => buscarCep(endereco.cep)}
-        />
-        
-        {loading && <ActivityIndicator size="small" color={Colors.primary} />}
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-        <TextInput
-          style={[styles.input, styles.inputDisabled]}
-          placeholder="Rua"
-          value={endereco.rua}
-          editable={false}
-        />
-
-        <View style={styles.row}>
-          <TextInput
-            style={[styles.input, { flex: 1, marginRight: 10 }]}
-            placeholder="Número"
-            value={endereco.numero}
-            onChangeText={(txt) => atualizarEndereco('numero', txt)}
-            keyboardType="numeric"
-          />
-
-          <TextInput
-            style={[styles.input, { flex: 2 }]}
-            placeholder="Complemento"
-            value={endereco.complemento}
-            onChangeText={(txt) => atualizarEndereco('complemento', txt)}
-          />
+      <View style={[styles.sheet, { paddingBottom: insets.bottom + 8 }]}>
+        <View style={styles.handleArea} {...panResponder.panHandlers}>
+          <View style={styles.handle} />
         </View>
 
-        <TextInput
-          style={[styles.input, styles.inputDisabled]}
-          placeholder="Bairro"
-          value={endereco.bairro}
-          editable={false}
-        />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.content}
+        >
+          <Text style={styles.title}>{isEditing ? "Editar endereço" : "Novo endereço"}</Text>
 
-        <View style={styles.row}>
+          <Text style={styles.label}>Referência</Text>
           <TextInput
-            style={[styles.input, styles.inputDisabled, { flex: 1, marginRight: 10 }]}
-            placeholder="Cidade"
-            value={endereco.cidade}
+            style={styles.input}
+            placeholder="Ex: Casa, Trabalho, Namorada"
+            placeholderTextColor={Colors.secondary}
+            value={nomeEndereco}
+            onChangeText={setNomeEndereco}
+            autoCapitalize="words"
+          />
+
+          <Text style={styles.label}>CEP</Text>
+          <View style={styles.cepRow}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="00000-000"
+              placeholderTextColor={Colors.secondary}
+              value={endereco.cep}
+              onChangeText={handleCepChange}
+              keyboardType="numeric"
+              maxLength={9}
+              onBlur={() => buscarCep(endereco.cep)}
+            />
+            {loading && <ActivityIndicator size="small" color={Colors.primary} style={styles.cepLoader} />}
+          </View>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <Text style={styles.label}>Rua</Text>
+          <TextInput
+            style={[styles.input, styles.inputDisabled]}
+            placeholder="Preenchido pelo CEP"
+            placeholderTextColor={Colors.secondary}
+            value={endereco.rua}
             editable={false}
           />
+
+          <View style={styles.row}>
+            <View style={{ flex: 1, marginRight: 10 }}>
+              <Text style={styles.label}>Número</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="123"
+                placeholderTextColor={Colors.secondary}
+                value={endereco.numero}
+                onChangeText={(txt) => atualizarEndereco("numero", txt)}
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={{ flex: 2 }}>
+              <Text style={styles.label}>Complemento</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Apto, Bloco..."
+                placeholderTextColor={Colors.secondary}
+                value={endereco.complemento}
+                onChangeText={(txt) => atualizarEndereco("complemento", txt)}
+              />
+            </View>
+          </View>
+
+          <Text style={styles.label}>Bairro</Text>
           <TextInput
-            style={[styles.input, styles.inputDisabled, { width: 60 }]}
-            placeholder="UF"
-            value={endereco.estado}
+            style={[styles.input, styles.inputDisabled]}
+            placeholder="Preenchido pelo CEP"
+            placeholderTextColor={Colors.secondary}
+            value={endereco.bairro}
             editable={false}
           />
-        </View>
 
-        <Button fullWidth onPress={handleSave} style={{ marginTop: 10 }} disabled={saving}>
-          {saving ? "Salvando..." : "Salvar"}
-        </Button>
+          <View style={styles.row}>
+            <View style={{ flex: 1, marginRight: 10 }}>
+              <Text style={styles.label}>Cidade</Text>
+              <TextInput
+                style={[styles.input, styles.inputDisabled]}
+                placeholder="Cidade"
+                placeholderTextColor={Colors.secondary}
+                value={endereco.cidade}
+                editable={false}
+              />
+            </View>
+            <View style={{ width: 70 }}>
+              <Text style={styles.label}>UF</Text>
+              <TextInput
+                style={[styles.input, styles.inputDisabled]}
+                placeholder="SP"
+                placeholderTextColor={Colors.secondary}
+                value={endereco.estado}
+                editable={false}
+              />
+            </View>
+          </View>
 
-        <TouchableOpacity onPress={onClose} style={styles.cancelBtn} disabled={saving}>
-          <Text style={styles.cancelText}>Cancelar</Text>
-        </TouchableOpacity>
+          <Button fullWidth onPress={handleSave} style={{ marginTop: 16 }} disabled={saving}>
+            {saveLabel}
+          </Button>
+
+          {isEditing && onDelete ? (
+            <TouchableOpacity style={styles.deleteBtn} onPress={() => onDelete(addressData)} disabled={saving}>
+              <Trash2 size={16} color={Colors.accent} />
+              <Text style={styles.deleteText}>Excluir endereço</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} disabled={saving}>
+              <Text style={styles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
+AddAddressModal.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  onDelete: PropTypes.func,
+  user: PropTypes.shape({ id: PropTypes.number, id_cliente: PropTypes.number }),
+  addressData: PropTypes.shape({
+    id_endereco: PropTypes.number,
+    nome_endereco: PropTypes.string,
+  }),
+};
+
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "#00000088", justifyContent: "center", padding: 20 },
-  modalBody: { backgroundColor: "#FFF", borderRadius: 16, padding: 20 },
-  title: { fontFamily: Fonts.newsreaderBold, fontSize: 20, color: Colors.primary, marginBottom: 15 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, marginBottom: 10, borderRadius: 8, backgroundColor: '#fff' },
-  inputDisabled: { backgroundColor: '#e9ecef', color: '#6c757d' },
-  errorText: { color: 'red', marginBottom: 10, fontFamily: Fonts.poppins, fontSize: 12 },
-  row: { flexDirection: 'row' },
-  cancelBtn: { marginTop: 15, padding: 10 },
-  cancelText: { textAlign: "center", color: "#999", fontFamily: Fonts.poppins }
+  overlay: { flex: 1, justifyContent: "flex-end" },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.55)" },
+  sheet: {
+    backgroundColor: Colors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 4,
+    maxHeight: "85%",
+  },
+  handleArea: { alignItems: "center", paddingVertical: 12 },
+  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.secondary, opacity: 0.4 },
+  content: { paddingHorizontal: 22, paddingBottom: 8 },
+  title: { fontFamily: Fonts.newsreader, fontSize: 22, color: Colors.primary, marginBottom: 12 },
+  label: { fontFamily: Fonts.poppins, fontSize: 13, color: Colors.primary, marginBottom: 4, marginTop: 10, opacity: 0.8 },
+  input: {
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontFamily: Fonts.poppins,
+    fontSize: 14,
+    color: Colors.primary,
+    backgroundColor: "#fff",
+  },
+  inputDisabled: { backgroundColor: "#f0e8de", borderColor: Colors.secondary, opacity: 0.7 },
+  cepRow: { flexDirection: "row", alignItems: "center" },
+  cepLoader: { marginLeft: 10 },
+  errorText: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.accent, marginTop: 2 },
+  row: { flexDirection: "row" },
+  deleteBtn: { marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10 },
+  deleteText: { fontFamily: Fonts.poppins, fontSize: 14, color: Colors.accent, textDecorationLine: "underline" },
+  cancelBtn: { marginTop: 2, paddingVertical: 8, alignItems: "center" },
+  cancelText: { fontFamily: Fonts.poppins, fontSize: 14, color: Colors.secondary },
 });

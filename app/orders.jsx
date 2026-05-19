@@ -1,39 +1,135 @@
-import { useFocusEffect } from "@react-navigation/native";
-import {
-    CheckCircle,
-    ClipboardCopy,
-    Package,
-    Truck,
-} from "lucide-react-native";
-import React, { useCallback, useEffect, useState } from "react";
-import {
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import { Button } from "../src/components/Button";
-import { Header } from "../src/components/Header";
-import { Navbar } from "../src/components/Navbar";
-import { Colors } from "../src/constants/Colors";
-import { Fonts } from "../src/constants/Fonts";
-import { useAuth } from "../src/contexts/AuthContext";
-import { orderService } from "../src/services/api";
-import { database } from "../src/services/database";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Modal, PanResponder } from 'react-native';
+import { Package, Truck, CheckCircle, XCircle, ClipboardCopy, Info, CreditCard, MapPin, Tag } from 'lucide-react-native';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { products as localProducts } from '../src/data/products';
+import { Colors } from '../src/constants/Colors';
+import { Fonts } from '../src/constants/Fonts';
+import { Navbar } from '../src/components/Navbar';
+import { Header } from '../src/components/Header';
+import { Button } from '../src/components/Button';
+import { database } from '../src/services/database';
+import { orderService } from '../src/services/api';
+import { useAuth } from '../src/contexts/AuthContext';
+import { useToast } from '../src/contexts/ToastContext';
 
 const STATUS_LABELS = {
   preparing: "Preparando",
   in_transit: "Em rota",
   delivered: "Entregue",
+  rejected: "Recusado",
 };
+
+function OrderInfoSheet({ order, onClose }) {
+  const insets = useSafeAreaInsets();
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => g.dy > 8 && Math.abs(g.dy) > Math.abs(g.dx),
+      onPanResponderRelease: (_, g) => { if (g.dy > 60) onClose(); },
+    })
+  ).current;
+
+  if (!order) return null;
+
+  const addressLine = order.address
+    ? [
+        order.address.logradouro && `${order.address.logradouro}, ${order.address.numero}`,
+        order.address.bairro,
+        order.address.cidade && order.address.estado
+          ? `${order.address.cidade} - ${order.address.estado}`
+          : order.address.cidade || order.address.estado,
+        order.address.cep,
+      ].filter(Boolean).join("\n")
+    : null;
+
+  return (
+    <View style={sheetStyles.overlay}>
+      <TouchableOpacity style={sheetStyles.backdrop} activeOpacity={1} onPress={onClose} />
+      <View style={[sheetStyles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+        <View style={sheetStyles.handleArea} {...panResponder.panHandlers}>
+          <View style={sheetStyles.handle} />
+        </View>
+        <Text style={sheetStyles.title}>Pedido #{order.id}</Text>
+
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={sheetStyles.content}>
+          <View style={sheetStyles.row}>
+            <CreditCard size={18} color={Colors.primary} />
+            <View style={sheetStyles.rowText}>
+              <Text style={sheetStyles.label}>Pagamento</Text>
+              <Text style={sheetStyles.value}>{order.metodo_pagamento || "Não informado"}</Text>
+            </View>
+          </View>
+
+          <View style={sheetStyles.divider} />
+
+          <View style={sheetStyles.row}>
+            <MapPin size={18} color={Colors.primary} />
+            <View style={sheetStyles.rowText}>
+              <Text style={sheetStyles.label}>Endereço de entrega</Text>
+              {addressLine
+                ? <Text style={sheetStyles.value}>{addressLine}</Text>
+                : <Text style={sheetStyles.valueMuted}>Não informado</Text>}
+            </View>
+          </View>
+
+          <View style={sheetStyles.divider} />
+
+          <View style={sheetStyles.row}>
+            <Tag size={18} color={Colors.primary} />
+            <View style={sheetStyles.rowText}>
+              <Text style={sheetStyles.label}>Cupom aplicado</Text>
+              {order.cupom_codigo
+                ? <Text style={sheetStyles.value}>{order.cupom_codigo} — R$ {Number(order.desconto_valor).toFixed(2).replace(".", ",")} de desconto</Text>
+                : <Text style={sheetStyles.valueMuted}>Nenhum</Text>}
+            </View>
+          </View>
+
+          <View style={sheetStyles.divider} />
+
+          <View style={sheetStyles.row}>
+            <Package size={18} color={Colors.primary} />
+            <View style={sheetStyles.rowText}>
+              <Text style={sheetStyles.label}>Status</Text>
+              <Text style={sheetStyles.value}>{STATUS_LABELS[order.status] ?? order.status}</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    </View>
+  );
+}
+
+const sheetStyles = StyleSheet.create({
+  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: "flex-end", zIndex: 100 },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.5)" },
+  sheet: {
+    backgroundColor: "#FFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 4,
+    maxHeight: "70%",
+  },
+  handleArea: { alignItems: "center", paddingVertical: 12 },
+  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: "#ccc" },
+  title: { fontFamily: Fonts.newsreader, fontSize: 20, color: Colors.primary, paddingHorizontal: 22, marginBottom: 8 },
+  content: { paddingHorizontal: 22, paddingBottom: 8 },
+  row: { flexDirection: "row", alignItems: "flex-start", gap: 14, paddingVertical: 14 },
+  rowText: { flex: 1, gap: 3 },
+  label: { fontFamily: Fonts.poppins, fontSize: 11, color: Colors.secondary, textTransform: "uppercase", letterSpacing: 0.5 },
+  value: { fontFamily: Fonts.newsreader, fontSize: 15, color: Colors.primary },
+  valueMuted: { fontFamily: Fonts.poppins, fontSize: 13, color: Colors.secondary, fontStyle: "italic" },
+  divider: { height: 1, backgroundColor: Colors.secondary, opacity: 0.15 },
+});
 
 export default function OrdersPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
+  const { status: initialStatus } = useLocalSearchParams();
   const [orders, setOrders] = useState([]);
-  const [activeTab, setActiveTab] = useState("preparing");
+  const [activeTab, setActiveTab] = useState(initialStatus || 'preparing');
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const loadOrders = useCallback(async () => {
     if (!user) return;
@@ -43,28 +139,26 @@ export default function OrdersPage() {
 
     try {
       const normalizeStatus = (status) => {
-        const raw = (status || "").toString().trim().toLowerCase();
-        if (!raw || raw === "pending" || raw.includes("pend"))
-          return "preparing";
-        if (
-          raw.includes("pago") ||
-          raw.includes("paid") ||
-          raw.includes("approved")
-        )
-          return "preparing";
-        if (raw.includes("rota") || raw.includes("transit"))
-          return "in_transit";
-        if (raw.includes("entreg") || raw.includes("delivered"))
-          return "delivered";
-        return "preparing";
+        const raw = (status || '').toString().trim().toLowerCase();
+        if (!raw || raw === 'pending' || raw.includes('pend')) return 'preparing';
+        if (raw.includes('pago') || raw.includes('paid') || raw.includes('approved')) return 'preparing';
+        if (raw.includes('recusado') || raw.includes('rejected') || raw.includes('cancel')) return 'rejected';
+        if (raw.includes('rota') || raw.includes('transit')) return 'in_transit';
+        if (raw.includes('entreg') || raw.includes('delivered')) return 'delivered';
+        return 'preparing';
+      };
+
+      const STATUS_NOTIFICATIONS = {
+        in_transit: { title: "Pedido em rota!", message: "Seu pedido saiu para entrega." },
+        delivered: { title: "Pedido entregue!", message: "Seu pedido foi entregue. Bom apetite!" },
       };
 
       const localResult = database.getAllSync(
-        "SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC",
-        [userId],
+        'SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC',
+        [userId]
       );
 
-      const localOrders = localResult.map((order) => ({
+      const localOrders = localResult.map(order => ({
         ...order,
         items: order.items ? JSON.parse(order.items) : [],
         status: normalizeStatus(order.status),
@@ -72,43 +166,82 @@ export default function OrdersPage() {
 
       const backendOrders = await orderService.getByClientId(userId);
 
-      if (!Array.isArray(backendOrders)) {
+      if (!Array.isArray(backendOrders) || backendOrders.length === 0) {
         setOrders(localOrders);
         return;
       }
 
-      const localMap = new Map(localOrders.map((order) => [order.id, order]));
-      const backendIds = backendOrders
-        .map((order) => order.id_pedido)
-        .filter((id) => Number.isFinite(Number(id)));
-
-      // Remove do cache local qualquer pedido do usuário que não existe mais no backend.
-      if (backendIds.length === 0) {
-        database.runSync("DELETE FROM orders WHERE user_id = ?", [userId]);
-      } else {
-        const placeholders = backendIds.map(() => "?").join(", ");
-        database.runSync(
-          `DELETE FROM orders WHERE user_id = ? AND id NOT IN (${placeholders})`,
-          [userId, ...backendIds],
-        );
-      }
+      const localMap = new Map(localOrders.map(order => [order.id, order]));
 
       const merged = backendOrders.map((backendOrder) => {
         const id = backendOrder.id_pedido;
         const mappedStatus = normalizeStatus(backendOrder.status_pedido);
         const cached = localMap.get(id);
 
+        if (cached && cached.status !== mappedStatus) {
+          const localDate = new Date().toLocaleString("pt-BR");
+          try {
+            if (cached.status === 'pending_payment' && mappedStatus === 'preparing') {
+              database.runSync(
+                "UPDATE notifications SET title = ?, message = ?, status = ? WHERE user_id = ? AND title = ?",
+                [
+                  `PEDIDO #${id} - Pagamento confirmado`,
+                  "Seu pagamento foi confirmado! Estamos preparando seu pedido.",
+                  "preparing",
+                  userId,
+                  `PEDIDO #${id} - PAGAMENTO`,
+                ],
+              );
+            } else if (cached.status === 'pending_payment' && mappedStatus === 'rejected') {
+              database.runSync(
+                "UPDATE notifications SET title = ?, message = ?, status = ? WHERE user_id = ? AND title = ?",
+                [
+                  `PEDIDO #${id} - Pagamento recusado`,
+                  "Seu pagamento foi recusado ou cancelado. Tente novamente.",
+                  "rejected",
+                  userId,
+                  `PEDIDO #${id} - PAGAMENTO`,
+                ],
+              );
+            } else if (STATUS_NOTIFICATIONS[mappedStatus]) {
+              const { title, message } = STATUS_NOTIFICATIONS[mappedStatus];
+              database.runSync(
+                "INSERT OR IGNORE INTO notifications (user_id, title, message, status, date) VALUES (?, ?, ?, ?, ?)",
+                [userId, `PEDIDO #${id} - ${title}`, message, mappedStatus, localDate],
+              );
+            }
+          } catch { /* falha silenciosa — notificação local é opcional */ }
+        }
+
+        const backendItems = (backendOrder.itens || []).map((i) => ({
+          id: i.id_bolo,
+          name: i.nome,
+          quantity: i.quantidade,
+          price: i.preco_unitario,
+          size: i.tamanho,
+          image: cached?.items?.find((li) => String(li.id) === String(i.id_bolo))?.image
+            ?? localProducts.find((lp) => String(lp.id) === String(i.id_bolo))?.image
+            ?? null,
+        }));
+        const resolvedItems = backendItems.length > 0 ? backendItems : (cached?.items || []);
+
         database.runSync(
           "INSERT OR REPLACE INTO orders (id, user_id, total, items, date, status) VALUES (?, ?, ?, ?, ?, ?)",
-          [
-            id,
-            userId,
-            backendOrder.valor_total,
-            JSON.stringify(cached?.items || []),
-            backendOrder.data_pedido,
-            mappedStatus,
-          ],
+          [id, userId, backendOrder.valor_total, JSON.stringify(resolvedItems), backendOrder.data_pedido, mappedStatus],
         );
+
+        const address = backendOrder.logradouro
+          ? {
+              nome: backendOrder.nome_endereco,
+              logradouro: backendOrder.logradouro,
+              numero: backendOrder.numero,
+              bairro: backendOrder.bairro,
+              cidade: backendOrder.cidade,
+              estado: backendOrder.estado,
+              cep: backendOrder.CEP,
+              complemento: backendOrder.complemento,
+            }
+          : null;
 
         return {
           id,
@@ -116,29 +249,20 @@ export default function OrdersPage() {
           total: backendOrder.valor_total,
           date: backendOrder.data_pedido,
           status: mappedStatus,
-          items: cached?.items || [],
+          items: resolvedItems,
+          metodo_pagamento: backendOrder.metodo_pagamento ?? null,
+          cupom_codigo: backendOrder.cupom_codigo ?? null,
+          desconto_valor: backendOrder.desconto_valor ?? 0,
+          address,
         };
       });
 
       merged.sort((a, b) => (b.id || 0) - (a.id || 0));
       setOrders(merged);
-    } catch (error) {
-      console.error("Erro ao carregar pedidos:", error);
-
-      // Sem backend, usa o cache local como fallback para não quebrar a tela.
-      const fallbackLocal = database
-        .getAllSync("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC", [
-          userId,
-        ])
-        .map((order) => ({
-          ...order,
-          items: order.items ? JSON.parse(order.items) : [],
-          status:
-            (order.status || "").toString().trim().toLowerCase() || "preparing",
-        }));
-      setOrders(fallbackLocal);
+    } catch {
+      showToast("Não foi possível carregar seus pedidos.", "error");
     }
-  }, [user]);
+  }, [user, showToast]);
 
   useEffect(() => {
     loadOrders();
@@ -147,19 +271,18 @@ export default function OrdersPage() {
   useFocusEffect(
     useCallback(() => {
       loadOrders();
-    }, [loadOrders]),
+    }, [loadOrders])
   );
 
   const filteredOrders = orders.filter((o) => o.status === activeTab);
 
-  const handleCopyTracking = (code) => {
-    Alert.alert(
-      "Copiado",
-      `Código ${code} copiado para a área de transferência!`,
-    );
+  const handleCopyTracking = async (code) => {
+    await Clipboard.setStringAsync(code);
+    showToast(`Código ${code} copiado!`, "info");
   };
 
-  const statusOptions = ["preparing", "in_transit", "delivered"];
+
+  const statusOptions = ["preparing", "in_transit", "delivered", "rejected"];
 
   return (
     <View style={styles.container}>
@@ -180,39 +303,39 @@ export default function OrdersPage() {
                 style={[
                   styles.statusTab,
                   activeTab === status && styles.statusTabActive,
+                  status === "rejected" && { borderColor: "#e74c3c" },
+                  status === "rejected" && activeTab === status && { backgroundColor: "#e74c3c" },
                 ]}
                 onPress={() => setActiveTab(status)}
               >
                 {status === "preparing" && (
                   <Package
                     size={18}
-                    color={
-                      activeTab === status ? Colors.background : Colors.primary
-                    }
+                    color={activeTab === status ? Colors.background : Colors.primary}
                   />
                 )}
                 {status === "in_transit" && (
                   <Truck
                     size={18}
-                    color={
-                      activeTab === status ? Colors.background : Colors.primary
-                    }
+                    color={activeTab === status ? Colors.background : Colors.primary}
                   />
                 )}
                 {status === "delivered" && (
                   <CheckCircle
                     size={18}
-                    color={
-                      activeTab === status ? Colors.background : Colors.primary
-                    }
+                    color={activeTab === status ? Colors.background : Colors.primary}
                   />
                 )}
-                <Text
-                  style={[
-                    styles.statusTabText,
-                    activeTab === status && styles.statusTabTextActive,
-                  ]}
-                >
+                {status === "rejected" && (
+                  <XCircle
+                    size={18}
+                    color={activeTab === status ? Colors.background : "#e74c3c"}
+                  />
+                )}
+                <Text style={[
+                  styles.statusTabText,
+                  activeTab === status && styles.statusTabTextActive
+                ]}>
                   {STATUS_LABELS[status]}
                 </Text>
               </TouchableOpacity>
@@ -221,9 +344,7 @@ export default function OrdersPage() {
 
           {filteredOrders.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                Nenhum pedido encontrado nesta categoria.
-              </Text>
+              <Text style={styles.emptyText}>Nenhum pedido encontrado nesta categoria.</Text>
             </View>
           ) : (
             filteredOrders.map((order) => (
@@ -239,34 +360,23 @@ export default function OrdersPage() {
                       <Text style={styles.trackingCode}>Copiar Rastreio</Text>
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.orderDateText}>{order.date}</Text>
+                  {order.date ? <Text style={styles.orderDateText}>{order.date}</Text> : null}
                 </View>
 
                 <View style={styles.orderItems}>
                   <Text style={styles.itemsTitle}>Detalhes</Text>
                   <View style={styles.itemDivider} />
 
-                  {order.items.map((item) => (
-                    <View
-                      key={`${item.id ?? item.name}-${item.size ?? "na"}-${item.quantity ?? 1}`}
-                      style={styles.orderItem}
-                    >
-                      <Image
-                        source={item.image}
-                        style={styles.orderItemImage}
-                      />
+                  {order.items.map((item, idx) => (
+                    <View key={idx} style={styles.orderItem}>
+                      <Image source={item.image} style={styles.orderItemImage} />
                       <View style={styles.orderItemInfo}>
                         <Text style={styles.orderItemName}>{item.name}</Text>
                         <View style={styles.sizeRow}>
-                          <Text style={styles.labelText}>
-                            Qtd: {item.quantity} | Tam: {item.size}
-                          </Text>
+                          <Text style={styles.labelText}>Qtd: {item.quantity} | Tam: {item.size}</Text>
                         </View>
                         <Text style={styles.totalPrice}>
-                          R${" "}
-                          {(item.price * item.quantity)
-                            .toFixed(2)
-                            .replace(".", ",")}
+                          R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
                         </Text>
                       </View>
                     </View>
@@ -282,19 +392,23 @@ export default function OrdersPage() {
                     <View>
                       <Text style={styles.orderTotalLabel}>Total Pago</Text>
                       <Text style={styles.orderTotalPrice}>
-                        R$ {Number(order.total).toFixed(2).replace(".", ",")}
+                        R$ {Number(order.total).toFixed(2).replace('.', ',')}
                       </Text>
                     </View>
-                    <Button
-                      onPress={() =>
-                        Alert.alert(
-                          "Rastreio",
-                          "Seu pedido está sendo processado pela Velvet Log.",
-                        )
-                      }
-                    >
-                      Rastrear
-                    </Button>
+                    <View style={styles.footerButtons}>
+                      <Button
+                        onPress={() => showToast("Seu pedido está sendo processado pela Velvet Log.", "info")}
+                      >
+                        Rastrear
+                      </Button>
+                      <TouchableOpacity
+                        style={styles.infoBtn}
+                        onPress={() => setSelectedOrder(order)}
+                      >
+                        <Info size={14} color={Colors.primary} />
+                        <Text style={styles.infoBtnText}>Mais informações</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               </View>
@@ -304,6 +418,10 @@ export default function OrdersPage() {
       </ScrollView>
 
       <Navbar />
+
+      <Modal visible={!!selectedOrder} transparent animationType="none">
+        <OrderInfoSheet order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+      </Modal>
     </View>
   );
 }
@@ -318,12 +436,7 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     textAlign: "center",
   },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.primary,
-    marginVertical: 5,
-    opacity: 0.3,
-  },
+  divider: { height: 1, backgroundColor: Colors.primary, marginVertical: 5, opacity: 0.3 },
   tabsRow: { flexDirection: "row", gap: 10, justifyContent: "center" },
   statusTab: {
     flexDirection: "row",
@@ -342,12 +455,12 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   statusTabTextActive: { color: Colors.background },
-  emptyContainer: { marginTop: 50, alignItems: "center" },
+  emptyContainer: { marginTop: 50, alignItems: 'center' },
   emptyText: {
     textAlign: "center",
     color: Colors.secondary,
     fontFamily: Fonts.poppins,
-    fontSize: 14,
+    fontSize: 14 
   },
   orderCard: {
     borderRadius: 12,
@@ -358,72 +471,30 @@ const styles = StyleSheet.create({
   },
   orderHeader: {
     backgroundColor: Colors.primary,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'column',
+    gap: 3,
     padding: 12,
   },
-  trackingRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  trackingLabel: {
-    fontFamily: Fonts.newsreader,
-    fontSize: 18,
-    color: "#D4AF37",
-  },
-  copyRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  trackingCode: {
-    fontFamily: Fonts.poppins,
-    fontSize: 12,
-    color: Colors.background,
-    textDecorationLine: "underline",
-  },
-  orderDateText: {
-    fontFamily: Fonts.poppins,
-    fontSize: 10,
-    color: Colors.background,
-  },
+  trackingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  trackingLabel: { fontFamily: Fonts.newsreader, fontSize: 18, color: '#D4AF37' },
+  copyRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  trackingCode: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.background, textDecorationLine: 'underline' },
+  orderDateText: { fontFamily: Fonts.poppins, fontSize: 10, color: Colors.background },
   orderItems: { padding: 12, gap: 10 },
-  itemsTitle: { fontFamily: Fonts.newsreader, fontSize: 18, color: "#000" },
-  itemDivider: {
-    height: 1,
-    backgroundColor: Colors.secondary,
-    opacity: 0.2,
-    marginVertical: 5,
-  },
-  orderItem: { flexDirection: "row", gap: 12, marginBottom: 10 },
+  itemsTitle: { fontFamily: Fonts.newsreader, fontSize: 18, color: '#000' },
+  itemDivider: { height: 1, backgroundColor: Colors.secondary, opacity: 0.2, marginVertical: 5 },
+  orderItem: { flexDirection: 'row', gap: 12, marginBottom: 10 },
   orderItemImage: { width: 60, height: 60, borderRadius: 8 },
   orderItemInfo: { flex: 1, gap: 2 },
-  orderItemName: {
-    fontFamily: Fonts.newsreader,
-    fontSize: 18,
-    color: Colors.primary,
-  },
-  sizeRow: { flexDirection: "row", alignItems: "center" },
-  labelText: { fontFamily: Fonts.poppins, fontSize: 13, color: "#666" },
-  totalPrice: {
-    fontFamily: Fonts.newsreaderBold,
-    fontSize: 16,
-    color: Colors.primary,
-  },
-  trackingDescription: {
-    fontFamily: Fonts.poppins,
-    fontSize: 12,
-    color: Colors.secondary,
-    fontStyle: "italic",
-  },
-  orderFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 5,
-  },
-  orderTotalLabel: {
-    fontFamily: Fonts.poppins,
-    fontSize: 12,
-    color: Colors.secondary,
-  },
-  orderTotalPrice: {
-    fontFamily: Fonts.newsreaderBold,
-    fontSize: 20,
-    color: Colors.primary,
-  },
+  orderItemName: { fontFamily: Fonts.newsreader, fontSize: 18, color: Colors.primary },
+  sizeRow: { flexDirection: 'row', alignItems: 'center' },
+  labelText: { fontFamily: Fonts.poppins, fontSize: 13, color: '#666' },
+  totalPrice: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.primary },
+  trackingDescription: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary, fontStyle: 'italic' },
+  orderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 },
+  orderTotalLabel: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.secondary },
+  orderTotalPrice: { fontFamily: Fonts.newsreaderBold, fontSize: 20, color: Colors.primary },
+  footerButtons: { alignItems: 'flex-end', gap: 8 },
+  infoBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  infoBtnText: { fontFamily: Fonts.poppins, fontSize: 12, color: Colors.primary, textDecorationLine: 'underline' },
 });

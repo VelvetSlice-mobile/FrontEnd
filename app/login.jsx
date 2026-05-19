@@ -1,43 +1,71 @@
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
-import { Button } from "../src/components/Button";
-import { FormInput } from "../src/components/FormInput";
-import { Colors } from "../src/constants/Colors";
-import { Fonts } from "../src/constants/Fonts";
-
+import { Button } from '../src/components/Button';
+import { FormInput } from '../src/components/FormInput';
+import { Colors } from '../src/constants/Colors';
+import { Fonts } from '../src/constants/Fonts';
 import { useAuth } from "../src/contexts/AuthContext";
+import { useToast } from "../src/contexts/ToastContext";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { showToast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const tapCountRef = useRef(0);
+  const tapTimeoutRef = useRef(null);
+
+  const handleTitlePress = () => {
+    tapCountRef.current += 1;
+    if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+    if (tapCountRef.current >= 3) {
+      tapCountRef.current = 0;
+      router.push("/register-admin");
+      return;
+    }
+    tapTimeoutRef.current = setTimeout(() => {
+      tapCountRef.current = 0;
+    }, 1500);
+  };
+
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Erro", "Preencha todos os campos");
+    if (!email.trim()) {
+      showToast("Informe seu e-mail.", "warning");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      showToast("Informe um e-mail válido.", "warning");
+      return;
+    }
+    if (!password) {
+      showToast("Informe sua senha.", "warning");
       return;
     }
 
     setLoading(true);
     try {
-      await login(email, password);
-      router.replace("/");
-    } catch (error) {
-      Alert.alert("Erro", "Falha na autenticação. Verifique suas credenciais.");
+      const result = await login(email.trim(), password);
+      if (result?.success === false) {
+        showToast(result.message || "Credenciais inválidas.", "error");
+        return;
+      }
+      router.replace(result?.user?.role === "admin" ? "/admin" : "/");
+    } catch {
+      showToast("Falha na conexão. Verifique sua internet.", "error");
     } finally {
       setLoading(false);
     }
@@ -46,16 +74,16 @@ export default function LoginPage() {
   return (
     <KeyboardAvoidingView
       style={styles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={0}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.card}>
-          <Text style={styles.title}>Velvet Slice</Text>
+          <TouchableOpacity onPress={handleTitlePress} activeOpacity={1}>
+            <Text style={styles.title}>Velvet Slice</Text>
+          </TouchableOpacity>
           <Text style={styles.subtitle}>Sejam bem vindos a Velvet Slice!</Text>
 
           <View style={styles.divider} />
@@ -79,27 +107,26 @@ export default function LoginPage() {
             onChangeText={setPassword}
           />
 
-          <TouchableOpacity onPress={() => router.push("/reset-password")}>
+          <TouchableOpacity onPress={() => router.push('/reset-password')}>
             <Text style={styles.forgotText}>
-              Esqueceu senha? Clique{" "}
-              <Text style={styles.linkUnderline}>aqui</Text>!
+              Esqueceu senha? Clique <Text style={styles.linkUnderline}>aqui</Text>!
             </Text>
           </TouchableOpacity>
 
           <Button fullWidth onPress={handleLogin} disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? 'Entrando...' : 'Entrar'}
           </Button>
 
           <View style={styles.divider} />
 
-          <TouchableOpacity onPress={() => router.push("/register")}>
+          <TouchableOpacity onPress={() => router.push('/register')}>
             <Text style={styles.registerText}>
-              Ainda não possui conta? Crie uma{" "}
-              <Text style={styles.linkUnderline}>aqui</Text>!
+              Ainda não possui conta? Crie uma <Text style={styles.linkUnderline}>aqui</Text>!
             </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+
     </KeyboardAvoidingView>
   );
 }
@@ -111,7 +138,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
     padding: 24,
   },
   card: {
@@ -119,7 +146,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     gap: 16,
-    shadowColor: Colors.primary || "#000",
+    shadowColor: Colors.primary,
     shadowOpacity: 0.24,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 0 },
@@ -129,32 +156,32 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.newsreader,
     fontSize: 24,
     color: Colors.primary,
-    textAlign: "center",
+    textAlign: 'center',
   },
   subtitle: {
     fontFamily: Fonts.poppins,
     fontSize: 14,
     color: Colors.primary,
-    textAlign: "center",
+    textAlign: 'center',
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.secondary || "#ccc",
+    backgroundColor: Colors.secondary,
     marginVertical: 4,
   },
   forgotText: {
-    fontFamily: Fonts.josefinSans || "sans-serif",
+    fontFamily: Fonts.josefinSans,
     fontSize: 14,
     color: Colors.secondary,
-    textAlign: "right",
+    textAlign: 'right',
   },
   linkUnderline: {
-    textDecorationLine: "underline",
+    textDecorationLine: 'underline',
   },
   registerText: {
-    fontFamily: Fonts.josefinSans || "sans-serif",
+    fontFamily: Fonts.josefinSans,
     fontSize: 14,
-    color: Colors.greenText || "green",
-    textAlign: "center",
+    color: Colors.success,
+    textAlign: 'center',
   },
 });

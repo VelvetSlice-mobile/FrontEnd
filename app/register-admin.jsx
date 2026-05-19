@@ -16,45 +16,67 @@ import { Header } from "../src/components/Header";
 import { Colors } from "../src/constants/Colors";
 import { Fonts } from "../src/constants/Fonts";
 import { useToast } from "../src/contexts/ToastContext";
-import { authService } from "../src/services/api";
+import { adminService } from "../src/services/api";
 
-export default function ResetPasswordPage() {
+export default function RegisterAdminPage() {
   const router = useRouter();
   const { showToast } = useToast();
 
+  const [nome, setNome] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [senha, setSenha] = useState("");
+  const [confirmSenha, setConfirmSenha] = useState("");
+  const [codigo, setCodigo] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleReset = async () => {
-    if (!email.trim() || !newPassword || !confirmPassword) {
-      return showToast("Preencha todos os campos.", "error");
+  const handleRegister = async () => {
+    if (!nome.trim() || !email.trim() || !senha || !confirmSenha || !codigo) {
+      return showToast("Preencha todos os campos obrigatórios.", "warning");
+    }
+
+    if (nome.trim().length < 2) {
+      return showToast("Nome deve ter pelo menos 2 caracteres.", "warning");
+    }
+
+    if (telefone && telefone.replace(/\D/g, "").length < 10) {
+      return showToast("Telefone inválido. Use DDD + número.", "warning");
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      return showToast("Informe um e-mail válido.", "error");
+      return showToast("Informe um e-mail válido.", "warning");
     }
 
-    if (newPassword.length < 6) {
-      return showToast("A nova senha deve ter no mínimo 6 caracteres.", "error");
+    if (senha.length < 6) {
+      return showToast("A senha deve ter pelo menos 6 caracteres.", "warning");
     }
 
-    if (newPassword.length > 100) {
-      return showToast("A nova senha deve ter no máximo 100 caracteres.", "error");
+    if (senha.length > 100) {
+      return showToast("A senha deve ter no máximo 100 caracteres.", "warning");
     }
 
-    if (newPassword !== confirmPassword) {
+    if (senha !== confirmSenha) {
       return showToast("As senhas não coincidem.", "error");
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
-      await authService.resetPassword(email.trim(), newPassword);
-      showToast("Senha redefinida com sucesso! Faça login.", "success");
+      await adminService.registerAdmin({
+        nome: nome.trim(),
+        telefone: telefone.trim(),
+        email: email.trim(),
+        senha,
+        codigo,
+      });
+
+      showToast("Cadastro realizado! Entre com suas credenciais.", "success");
       router.replace("/login");
-    } catch (error) {
-      showToast(error.message || "Erro ao redefinir senha.", "error");
+    } catch (err) {
+      const raw = err.message || "Erro ao cadastrar.";
+      const msg = raw.includes("já cadastrado")
+        ? "Este e-mail já está em uso."
+        : raw;
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -65,23 +87,39 @@ export default function ResetPasswordPage() {
       style={styles.screen}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <Header title="Redefinir senha" showBack />
+      <Header title="Cadastro de Vendedor" showBack />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.card}>
-          <Text style={styles.title}>Esqueceu a senha?</Text>
+          <Text style={styles.title}>Cadastro de Vendedor</Text>
           <Text style={styles.subtitle}>
-            Informe o e-mail da sua conta e escolha uma nova senha.
+            Preencha os dados abaixo para criar sua conta de vendedor.
           </Text>
 
           <View style={styles.divider} />
 
           <FormInput
-            label="E-mail cadastrado"
-            placeholder="Digite seu e-mail"
+            label="Nome completo"
+            placeholder="Seu nome completo"
+            value={nome}
+            onChangeText={setNome}
+          />
+
+          <FormInput
+            label="Telefone"
+            placeholder="+55 (11) 9****-****"
+            keyboardType="phone-pad"
+            value={telefone}
+            onChangeText={setTelefone}
+            maxLength={19}
+          />
+
+          <FormInput
+            label="E-mail"
+            placeholder="email@exemplo.com"
             icon="mail"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -91,39 +129,46 @@ export default function ResetPasswordPage() {
           />
 
           <FormInput
-            label="Nova senha"
+            label="Senha"
             placeholder="••••••••••••"
             secureTextEntry
-            value={newPassword}
-            onChangeText={setNewPassword}
+            value={senha}
+            onChangeText={setSenha}
             maxLength={100}
           />
-          <Text style={styles.hint}>
-            Entre 6 e 100 caracteres. Use letras, números e símbolos (!@#$%) para mais segurança.
-          </Text>
+          <Text style={styles.hint}>Entre 6 e 100 caracteres.</Text>
 
           <FormInput
-            label="Confirmar nova senha"
+            label="Confirmar senha"
             placeholder="••••••••••••"
             secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            value={confirmSenha}
+            onChangeText={setConfirmSenha}
             maxLength={100}
           />
-          {confirmPassword.length > 0 && confirmPassword !== newPassword ? (
+          {confirmSenha.length > 0 && confirmSenha !== senha ? (
             <Text style={styles.hintError}>As senhas não coincidem.</Text>
           ) : null}
 
-          <Button fullWidth onPress={handleReset} loading={loading}>
-            Redefinir senha
+          <FormInput
+            label="Código de acesso"
+            placeholder="••••••••••••"
+            secureTextEntry
+            value={codigo}
+            onChangeText={setCodigo}
+          />
+          <Text style={styles.hint}>Código fornecido pela administração.</Text>
+
+          <Button fullWidth onPress={handleRegister} loading={loading}>
+            Cadastrar
           </Button>
 
           <View style={styles.divider} />
 
           <TouchableOpacity onPress={() => router.replace("/login")}>
             <Text style={styles.backText}>
-              Lembrou a senha? Voltar para o{" "}
-              <Text style={styles.linkUnderline}>login</Text>
+              Já tem cadastro?{" "}
+              <Text style={styles.linkUnderline}>Acesse aqui</Text>
             </Text>
           </TouchableOpacity>
         </View>

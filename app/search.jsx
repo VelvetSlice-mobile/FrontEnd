@@ -1,16 +1,20 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, TextInput, ScrollView, StyleSheet } from "react-native";
 import { Search as SearchIcon } from "lucide-react-native";
+import { useLocalSearchParams } from "expo-router";
 import { products } from "../src/data/products";
 import { Colors } from "../src/constants/Colors";
 import { Fonts } from "../src/constants/Fonts";
 import { useNavScrollBehavior } from "../src/contexts/NavContext";
+import { useAuth } from "../src/contexts/AuthContext";
 import { Header } from "../src/components/Header";
 import { ProductCard } from "../src/components/ProductCard";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
+  const { from } = useLocalSearchParams();
   const handleScroll = useNavScrollBehavior();
+  const { user } = useAuth();
 
   const filtered = useMemo(() => {
     if (!query.trim()) return products;
@@ -24,7 +28,7 @@ export default function SearchPage() {
 
   return (
     <View style={styles.container}>
-      <Header />
+      <Header userName={user?.name ?? user?.nome} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
@@ -48,7 +52,7 @@ export default function SearchPage() {
 
           <View style={styles.grid}>
             {filtered.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product.id} product={product} from={from} />
             ))}
           </View>
 
