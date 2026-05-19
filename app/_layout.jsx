@@ -3,13 +3,6 @@ import {
   Newsreader_700Bold,
   useFonts,
 } from "@expo-google-fonts/newsreader";
-<<<<<<< Updated upstream
-import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
-import { AuthProvider } from "../src/contexts/AuthContext";
-import { CartProvider } from "../src/contexts/CartContext";
-=======
 import { Stack, usePathname, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
@@ -18,10 +11,7 @@ import { AuthProvider, useAuth } from "../src/contexts/AuthContext";
 import { CartProvider } from "../src/contexts/CartContext";
 import { NavProvider, useNav } from "../src/contexts/NavContext";
 import { ToastProvider } from "../src/contexts/ToastContext";
->>>>>>> Stashed changes
 import { initDatabase } from "../src/services/database";
-import { NavProvider, useNav } from "../src/contexts/NavContext"; 
-import { Navbar } from "../src/components/Navbar";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -34,11 +24,8 @@ export default function Layout() {
   useEffect(() => {
     try {
       initDatabase();
-    } catch (error) {
-<<<<<<< Updated upstream
-=======
-      console.error("Erro ao inicializar banco local:", error);
->>>>>>> Stashed changes
+    } catch {
+      // falha silenciosa — app funciona sem banco local
     }
   }, []);
 
@@ -81,6 +68,8 @@ export default function Layout() {
               <Stack.Screen name="profile" />
               <Stack.Screen name="search" />
               <Stack.Screen name="admin" />
+              <Stack.Screen name="register-admin" />
+              <Stack.Screen name="reset-password" />
             </Stack>
             <NavbarGlobal />
             <SessionGuard />
@@ -91,31 +80,38 @@ export default function Layout() {
   );
 }
 
-const PUBLIC_ROUTES = new Set(["/login", "/register", "/reset-password", "/payment-success", "/payment-failure"]);
+const PUBLIC_ROUTES = new Set([
+  "/",
+  "/login",
+  "/register",
+  "/reset-password",
+  "/register-admin",
+  "/payment-success",
+  "/payment-failure",
+]);
 
 function SessionGuard() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated && !PUBLIC_ROUTES.has(pathname)) {
+    if (isLoading) return;
+    const isProductRoute = pathname.startsWith("/product/");
+    if (!isAuthenticated && !PUBLIC_ROUTES.has(pathname) && !isProductRoute) {
       router.replace("/login");
     }
-  }, [isAuthenticated, pathname]);
+  }, [isAuthenticated, isLoading, pathname, router]);
 
   return null;
 }
 
 function NavbarGlobal() {
   const { showNav } = useNav();
-<<<<<<< Updated upstream
-  return <Navbar visible={showNav} />;
-=======
+  const pathname = usePathname();
   const hiddenRoutes = ["/login", "/register", "/reset-password"];
   const isAdminRoute = pathname.startsWith("/admin");
   const shouldShowNavbar = showNav && !hiddenRoutes.includes(pathname) && !isAdminRoute;
 
   return <Navbar visible={shouldShowNavbar} />;
->>>>>>> Stashed changes
 }
