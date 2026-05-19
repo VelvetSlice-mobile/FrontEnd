@@ -1,30 +1,25 @@
-<<<<<<< Updated upstream
-import React, { createContext, useContext, useState } from 'react';
-import { authService } from '../../src/services/api';
-=======
 import PropTypes from "prop-types";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { authService, registerSessionExpiredHandler } from "../services/api";
+import { authService, registerSessionExpiredHandler, setAuthToken } from "../services/api";
 import { deleteUser, getPersistedUser, saveUser } from "../services/database";
->>>>>>> Stashed changes
 
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
-<<<<<<< Updated upstream
-  // Use esta linha para teste (como você pediu):
-  const [user, setUser] = useState({ id: 1, name: 'Miguel Dev', email: 'teste@teste.com', phone: '(11) 99999-9999' });
-  // const [user, setUser] = useState(null); 
-=======
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const persisted = getPersistedUser();
-    if (persisted) setUser(persisted);
+    if (persisted) {
+      setUser(persisted);
+      setAuthToken(persisted.accessToken ?? null);
+    }
+    setIsLoading(false);
   }, []);
->>>>>>> Stashed changes
 
   const logout = useCallback(() => {
+    setAuthToken(null);
     setUser((prev) => {
       if (prev?.email) deleteUser(prev.email);
       return null;
@@ -39,6 +34,7 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(async (email, password) => {
     try {
       const userData = await authService.login(email, password);
+      setAuthToken(userData.accessToken ?? null);
       setUser(userData);
       return { success: true, user: userData };
     } catch (error) {
@@ -49,6 +45,7 @@ export const AuthProvider = ({ children }) => {
   const register = useCallback(async (userData) => {
     try {
       const result = await authService.register(userData);
+      setAuthToken(result.accessToken ?? null);
       setUser(result);
       return { success: true };
     } catch (error) {
@@ -56,20 +53,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-<<<<<<< Updated upstream
-  const logout = () => {
-    setUser(null);
-  };
-
-
-  const updateUserData = async (newData) => {
-    try {
-      setUser(prev => ({ ...prev, ...newData }));
-      return { success: true };
-    } catch (error) {
-      console.error("Erro ao atualizar dados:", error);
-      return { success: false, message: "Erro ao salvar alterações localmente." };
-=======
   const updateUserData = useCallback(async (newData) => {
     try {
       if (!user?.id) throw new Error("Usuário não autenticado.");
@@ -111,35 +94,22 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       return { success: false, message: error.message || "Não foi possível atualizar a foto." };
->>>>>>> Stashed changes
     }
   }, [user]);
 
   const value = useMemo(() => ({
     user,
     isAuthenticated: !!user,
+    isLoading,
     login,
     register,
     logout,
     updateUserData,
     updateUserAvatar,
-  }), [user, login, register, logout, updateUserData, updateUserAvatar]);
+  }), [user, isLoading, login, register, logout, updateUserData, updateUserAvatar]);
 
   return (
-<<<<<<< Updated upstream
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        login,
-        register,
-        logout,
-        updateUserData
-      }}
-    >
-=======
     <AuthContext.Provider value={value}>
->>>>>>> Stashed changes
       {children}
     </AuthContext.Provider>
   );
@@ -149,12 +119,6 @@ AuthProvider.propTypes = { children: PropTypes.node.isRequired };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-<<<<<<< Updated upstream
-  if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
-  }
-=======
   if (context === undefined) throw new Error("useAuth deve ser usado dentro de um AuthProvider");
->>>>>>> Stashed changes
   return context;
 };
