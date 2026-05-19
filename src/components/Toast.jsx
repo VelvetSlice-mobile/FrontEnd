@@ -1,6 +1,7 @@
+import PropTypes from "prop-types";
 import { AlertTriangle, CheckCircle, Info, X, XCircle } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../constants/Colors";
@@ -30,18 +31,40 @@ function ToastItem({ toast, onDismiss }) {
   );
 }
 
+ToastItem.propTypes = {
+  toast: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    message: PropTypes.string.isRequired,
+    type: PropTypes.oneOf(["success", "error", "warning", "info"]).isRequired,
+  }).isRequired,
+  onDismiss: PropTypes.func.isRequired,
+};
+
 export function ToastContainer({ toasts, onDismiss }) {
   const insets = useSafeAreaInsets();
   if (toasts.length === 0) return null;
 
   return (
-    <View style={[styles.container, { top: insets.top + 12 }]} pointerEvents="box-none">
-      {toasts.map((t) => (
-        <ToastItem key={t.id} toast={t} onDismiss={onDismiss} />
-      ))}
-    </View>
+    <Modal transparent visible statusBarTranslucent animationType="none">
+      <View style={[styles.container, { top: insets.top + 12 }]} pointerEvents="box-none">
+        {toasts.map((t) => (
+          <ToastItem key={t.id} toast={t} onDismiss={onDismiss} />
+        ))}
+      </View>
+    </Modal>
   );
 }
+
+ToastContainer.propTypes = {
+  toasts: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      message: PropTypes.string.isRequired,
+      type: PropTypes.oneOf(["success", "error", "warning", "info"]).isRequired,
+    })
+  ).isRequired,
+  onDismiss: PropTypes.func.isRequired,
+};
 
 const styles = StyleSheet.create({
   container: {

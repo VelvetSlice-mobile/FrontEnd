@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { AlertTriangle, Info, Trash2 } from "lucide-react-native";
 import React from "react";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -51,6 +52,17 @@ export function ConfirmDialog({
     </Modal>
   );
 }
+
+ConfirmDialog.propTypes = {
+  visible: PropTypes.bool.isRequired,
+  title: PropTypes.string.isRequired,
+  message: PropTypes.string,
+  confirmText: PropTypes.string,
+  cancelText: PropTypes.string,
+  type: PropTypes.oneOf(["danger", "warning", "info"]),
+  onConfirm: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+};
 
 const styles = StyleSheet.create({
   overlay: {

@@ -1,25 +1,3 @@
-<<<<<<< Updated upstream
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Bell } from 'lucide-react-native';
-
-import { Colors } from '../constants/Colors';
-import { Fonts } from '../constants/Fonts';
-export function Header() {
-  return (
-    <View style={styles.header}>
-      <View style={styles.topRow}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.subtitle}>Bem vindos a</Text>
-          <Text style={styles.title}>Velvet Slice</Text>
-        </View>
-        
-        <TouchableOpacity 
-          style={styles.bellButton}
-          onPress={() => Alert.alert('Notificações', 'Você não tem novas mensagens.')}
-        >
-          <Bell size={18} color={Colors.background || '#FFF'} />
-=======
 import { useRouter } from "expo-router";
 import { ArrowLeft, Bell } from "lucide-react-native";
 import PropTypes from "prop-types";
@@ -28,8 +6,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 
-export function Header({ title, showBack = false }) {
+export function Header({ title, showBack = false, userName }) {
   const router = useRouter();
+
+  const firstName = userName ? userName.split(" ")[0] : null;
 
   return (
     <View style={styles.header}>
@@ -41,7 +21,14 @@ export function Header({ title, showBack = false }) {
             </TouchableOpacity>
           ) : (
             <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/")}>
-              <Text style={styles.subtitle}>Bem vindos a</Text>
+              {firstName ? (
+                <Text style={styles.subtitle}>
+                  Bem-vinda,{" "}
+                  <Text style={styles.subtitleName}>{firstName}</Text>
+                </Text>
+              ) : (
+                <Text style={styles.subtitle}>Bem vindos a</Text>
+              )}
               <Text style={styles.title}>Velvet Slice</Text>
             </TouchableOpacity>
           )}
@@ -53,7 +40,6 @@ export function Header({ title, showBack = false }) {
           onPress={() => router.push("/notifications")}
         >
           <Bell size={18} color={Colors.background} />
->>>>>>> Stashed changes
         </TouchableOpacity>
       </View>
     </View>
@@ -63,27 +49,19 @@ export function Header({ title, showBack = false }) {
 Header.propTypes = {
   title: PropTypes.string,
   showBack: PropTypes.bool,
+  userName: PropTypes.string,
 };
 
 const styles = StyleSheet.create({
   header: {
-<<<<<<< Updated upstream
-    backgroundColor: Colors.primary || '#1A1A1A',
-    paddingTop: 60, 
-=======
     backgroundColor: Colors.primary,
     paddingTop: 60,
->>>>>>> Stashed changes
     paddingBottom: 25,
     paddingHorizontal: 22,
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
     elevation: 8,
-<<<<<<< Updated upstream
-    shadowColor: Colors.primary || '#000',
-=======
     shadowColor: Colors.primary,
->>>>>>> Stashed changes
     shadowOpacity: 0.2,
     shadowRadius: 15,
     shadowOffset: { width: 0, height: 4 },
@@ -102,21 +80,16 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: Fonts.newsreader,
     fontSize: 16,
-<<<<<<< Updated upstream
-    color: Colors.secondary || '#ccc',
-=======
     color: Colors.secondary,
->>>>>>> Stashed changes
+  },
+  subtitleName: {
+    fontFamily: Fonts.newsreader,
+    fontSize: 16,
+    color: Colors.background,
   },
   title: {
     fontFamily: Fonts.newsreader,
     fontSize: 28,
-<<<<<<< Updated upstream
-    color: Colors.background || '#FFF',
-  },
-  bellButton: {
-    backgroundColor: Colors.secondary || '#ccc',
-=======
     color: Colors.background,
   },
   pageTitle: {
@@ -128,8 +101,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   bellButton: {
-    backgroundColor: "rgba(255,255,255,0.2)",
->>>>>>> Stashed changes
+    backgroundColor: Colors.accent,
     padding: 10,
     borderRadius: 10,
   },

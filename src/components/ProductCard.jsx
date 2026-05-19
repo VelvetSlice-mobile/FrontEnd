@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Star } from 'lucide-react-native';
 
@@ -9,12 +9,25 @@ import { Fonts } from '../constants/Fonts';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 55) / 2;
+const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, "");
+
+function resolveImageSource(image) {
+  if (!image) return null;
+  if (typeof image === "string") {
+    if (/^https?:\/\//i.test(image)) return { uri: image };
+    if (image.startsWith("/")) return { uri: `${API_URL}${image}` };
+    return null;
+  }
+  return image;
+}
+
 export function ProductCard({ product, from }) {
   const router = useRouter();
 
   if (!product) return null;
 
   const href = from ? `/product/${product.id}?from=${from}` : `/product/${product.id}`;
+  const imageSource = resolveImageSource(product.image);
 
   return (
     <TouchableOpacity
@@ -22,11 +35,11 @@ export function ProductCard({ product, from }) {
       onPress={() => router.push(href)}
       activeOpacity={0.8}
     >
-      <Image 
-        source={product.image} 
-        style={styles.image} 
-        resizeMode="cover" 
-      />
+      {imageSource ? (
+        <Image source={imageSource} style={styles.image} resizeMode="cover" />
+      ) : (
+        <View style={[styles.image, styles.imagePlaceholder]} />
+      )}
       
       <View style={styles.info}>
         <View style={styles.priceRow}>
@@ -36,7 +49,7 @@ export function ProductCard({ product, from }) {
           </Text>
           
           <View style={styles.ratingBadge}>
-            <Star size={10} color={Colors.accent || '#D4AF37'} fill={Colors.accent || '#D4AF37'} />
+            <Star size={10} color={Colors.accent} fill={Colors.accent} />
             <Text style={styles.ratingText}>{product.rating}</Text>
           </View>
         </View>
@@ -74,6 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#F5F5F5',
   },
+  imagePlaceholder: { backgroundColor: '#e0d5cc' },
   info: {
     paddingTop: 10,
     gap: 4,
@@ -86,7 +100,7 @@ const styles = StyleSheet.create({
   price: {
     fontFamily: Fonts.poppins,
     fontSize: 16,
-    color: Colors.primary || '#4F2C1D',
+    color: Colors.primary,
   },
   perKg: {
     fontSize: 10,
@@ -101,12 +115,12 @@ const styles = StyleSheet.create({
   ratingText: {
     fontFamily: Fonts.newsreader,
     fontSize: 12,
-    color: Colors.accent || '#D4AF37',
+    color: Colors.accent,
   },
   name: {
     fontFamily: Fonts.newsreader,
     fontSize: 15,
-    color: Colors.primary || '#4F2C1D',
+    color: Colors.primary,
     lineHeight: 20,
   },
 });

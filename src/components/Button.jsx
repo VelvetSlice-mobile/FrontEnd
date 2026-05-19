@@ -1,13 +1,15 @@
+import PropTypes from 'prop-types';
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
-export function Button({ 
-  children, 
-  fullWidth, 
-  variant = 'solid', 
-  style, 
-  ...rest 
+
+export function Button({
+  children,
+  fullWidth,
+  variant = 'solid',
+  style,
+  ...rest
 }) {
   const isSolid = variant === 'solid';
 
@@ -32,6 +34,13 @@ export function Button({
   );
 }
 
+Button.propTypes = {
+  children: PropTypes.node.isRequired,
+  fullWidth: PropTypes.bool,
+  variant: PropTypes.oneOf(['solid', 'outline']),
+  style: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+};
+
 const styles = StyleSheet.create({
   button: {
     paddingVertical: 14,
@@ -41,25 +50,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     elevation: 2,
   },
-  fullWidth: { 
-    width: '100%' 
-  },
-  solid: { 
-    backgroundColor: Colors.accent || '#D4AF37' 
-  },
-  outline: { 
-    backgroundColor: 'transparent', 
-    borderWidth: 1.5, 
-    borderColor: Colors.accent || '#D4AF37' 
-  },
-  text: { 
-    fontFamily: Fonts.newsreaderBold, 
-    fontSize: 16 
-  },
-  textSolid: { 
-    color: Colors.background || '#FFF' 
-  },
-  textOutline: { 
-    color: Colors.accent || '#D4AF37' 
-  },
+  fullWidth: { width: '100%' },
+  solid: { backgroundColor: Colors.accent },
+  outline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: Colors.accent },
+  text: { fontFamily: Fonts.newsreaderBold, fontSize: 16 },
+  textSolid: { color: Colors.background },
+  textOutline: { color: Colors.accent },
 });

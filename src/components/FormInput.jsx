@@ -1,9 +1,11 @@
+import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Eye, EyeOff, Mail } from 'lucide-react-native';
 
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
+
 export function FormInput({ label, icon, secureTextEntry, style, ...rest }) {
   const [showPassword, setShowPassword] = useState(false);
   
@@ -16,7 +18,7 @@ export function FormInput({ label, icon, secureTextEntry, style, ...rest }) {
       <View style={styles.inputWrapper}>
         <TextInput
           style={[styles.input, style]}
-          placeholderTextColor={Colors.secondary || '#999'}
+          placeholderTextColor={Colors.secondary}
           secureTextEntry={isPassword ? !showPassword : false}
           {...rest}
         />
@@ -42,6 +44,13 @@ export function FormInput({ label, icon, secureTextEntry, style, ...rest }) {
     </View>
   );
 }
+
+FormInput.propTypes = {
+  label: PropTypes.string,
+  icon: PropTypes.oneOf(['mail', 'password']),
+  secureTextEntry: PropTypes.bool,
+  style: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+};
 
 const styles = StyleSheet.create({
   container: {
