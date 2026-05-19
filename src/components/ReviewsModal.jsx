@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Star } from "lucide-react-native";
+import { Pencil, Star, Trash2 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
@@ -82,6 +82,10 @@ export function ReviewsModal({ boloId, visible, onClose }) {
   const [nota, setNota] = useState(0);
   const [comentario, setComentario] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editNota, setEditNota] = useState(0);
+  const [editComentario, setEditComentario] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -114,6 +118,38 @@ export function ReviewsModal({ boloId, visible, onClose }) {
       showToast(err.message || "Não foi possível enviar a avaliação.", "error");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleStartEdit = (r) => {
+    setEditingId(r.id_avaliacao);
+    setEditNota(r.nota);
+    setEditComentario(r.comentario || "");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editNota) { showToast("Selecione uma nota.", "warning"); return; }
+    setSavingEdit(true);
+    try {
+      await avaliacaoService.update(editingId, { nota: editNota, comentario: editComentario });
+      showToast("Avaliação atualizada!", "success");
+      setEditingId(null);
+      const updated = await avaliacaoService.getByBolo(boloId);
+      setReviews(updated);
+    } catch (err) {
+      showToast(err.message || "Não foi possível salvar.", "error");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await avaliacaoService.delete(id);
+      showToast("Avaliação excluída.", "success");
+      setReviews((prev) => prev.filter((r) => r.id_avaliacao !== id));
+    } catch (err) {
+      showToast(err.message || "Não foi possível excluir.", "error");
     }
   };
 
@@ -153,21 +189,67 @@ export function ReviewsModal({ boloId, visible, onClose }) {
           ) : reviews.length === 0 ? (
             <Text style={styles.emptyText}>Nenhuma avaliação ainda. Seja o primeiro!</Text>
           ) : (
-            reviews.map((r) => (
-              <View key={r.id_avaliacao} style={styles.reviewCard}>
-                <InitialsAvatar name={r.nome} />
-                <View style={{ flex: 1, gap: 3 }}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewerName}>{r.nome}</Text>
-                    <Text style={styles.reviewDate}>{formatDate(r.data_avaliacao)}</Text>
+            reviews.map((r) => {
+              const isOwner = userId && String(r.id_cliente) === String(userId);
+              const isEditing = editingId === r.id_avaliacao;
+              return (
+                <View key={r.id_avaliacao} style={styles.reviewCard}>
+                  <InitialsAvatar name={r.nome} />
+                  <View style={{ flex: 1, gap: 3 }}>
+                    <View style={styles.reviewHeader}>
+                      <Text style={styles.reviewerName}>{r.nome}</Text>
+                      <View style={styles.reviewActions}>
+                        <Text style={styles.reviewDate}>{formatDate(r.data_avaliacao)}</Text>
+                        {isOwner && !isEditing && (
+                          <>
+                            <TouchableOpacity onPress={() => handleStartEdit(r)} hitSlop={8}>
+                              <Pencil size={15} color={Colors.primary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => handleDelete(r.id_avaliacao)} hitSlop={8}>
+                              <Trash2 size={15} color={Colors.error} />
+                            </TouchableOpacity>
+                          </>
+                        )}
+                      </View>
+                    </View>
+
+                    {isEditing ? (
+                      <>
+                        <StarRow nota={editNota} size={20} interactive onSelect={setEditNota} />
+                        <TextInput
+                          style={styles.editInput}
+                          value={editComentario}
+                          onChangeText={setEditComentario}
+                          placeholder="Comentário (opcional)"
+                          placeholderTextColor={Colors.secondary}
+                          multiline
+                          maxLength={300}
+                        />
+                        <View style={styles.editBtnRow}>
+                          <TouchableOpacity
+                            style={styles.editSaveBtn}
+                            onPress={handleSaveEdit}
+                            disabled={savingEdit}
+                          >
+                            <Text style={styles.editSaveText}>{savingEdit ? "Salvando..." : "Salvar"}</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => setEditingId(null)}>
+                            <Text style={styles.editCancelText}>Cancelar</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        <StarRow nota={r.nota} size={13} />
+                        {r.comentario ? (
+                          <Text style={styles.reviewComment}>{r.comentario}</Text>
+                        ) : null}
+                      </>
+                    )}
                   </View>
-                  <StarRow nota={r.nota} size={13} />
-                  {r.comentario ? (
-                    <Text style={styles.reviewComment}>{r.comentario}</Text>
-                  ) : null}
                 </View>
-              </View>
-            ))
+              );
+            })
           )}
 
           <View style={styles.divider} />
@@ -261,4 +343,23 @@ const styles = StyleSheet.create({
   submitBtnDisabled: { opacity: 0.45 },
   submitText: { fontFamily: Fonts.newsreaderBold, fontSize: 16, color: Colors.background },
   loginHint: { fontFamily: Fonts.poppins, fontSize: 13, color: Colors.secondary, textAlign: "center", marginVertical: 16 },
+  reviewActions: { flexDirection: "row", alignItems: "center", gap: 10 },
+  editInput: {
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    fontFamily: Fonts.poppins,
+    fontSize: 13,
+    color: Colors.primary,
+    backgroundColor: "#fff",
+    minHeight: 56,
+    textAlignVertical: "top",
+    marginTop: 4,
+  },
+  editBtnRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 4 },
+  editSaveBtn: { backgroundColor: Colors.primary, borderRadius: 8, paddingVertical: 7, paddingHorizontal: 18 },
+  editSaveText: { fontFamily: Fonts.newsreaderBold, fontSize: 14, color: Colors.background },
+  editCancelText: { fontFamily: Fonts.poppins, fontSize: 13, color: Colors.secondary },
 });
